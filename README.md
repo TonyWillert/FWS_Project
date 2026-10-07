@@ -53,6 +53,9 @@ Geplant ist eine einfache lokale Browseroberfläche, die einen vorbereiteten Dat
 - `01_datensichtung.ipynb`: Datensichtung und Erstellung der Modellbasen.
 - `02_modellvergleich.ipynb` bis `04_abschlussbewertung.ipynb`: frühere Untersuchung der Abmeldung ab Tag 14.
 - `05_tag28_modellvergleich.ipynb`: aktueller Modellvergleich und Auswertung für Tag 28.
+- `06_zeitliche_pruefung.ipynb`: Prüfung des festgelegten Modells auf 2014J.
+- `data/demo/oulad_tag28_demo.csv`: historische Vorführdaten ohne späteres
+  Kursergebnis; die Browseroberfläche dafür ist noch geplant.
 
 Die Rohdaten liegen lokal im Ordner `Daten OULAD`. Zum erneuten Ausführen muss der absolute Projektpfad in `01_datensichtung.ipynb` gegebenenfalls an den eigenen Rechner angepasst werden. Danach kann `05_tag28_modellvergleich.ipynb` die erzeugte Tag-28-Modellbasis einlesen.
 
@@ -67,4 +70,39 @@ Die Rohdaten liegen lokal im Ordner `Daten OULAD`. Zum erneuten Ausführen muss 
 Kuzilek, J., Hlosta, M. & Zdrahal, Z. (2017):
 [Open University Learning Analytics dataset](https://doi.org/10.1038/sdata.2017.171).
 
+Für die geplante Ansicht werden Hinweise innerhalb jeder Kurspräsentation
+vergeben. Diese Auswahl erreicht im zurückgelegten Prüfteil bei rund 10 %
+Hinweisen eine Trefferquote von 84,9 % und einen Recall von 19,5 %.
+Sie wurde zuvor auch innerhalb der Entwicklungsdaten untersucht. Da die
+Entscheidung für diese Auswahl nach Sichtung des Prüfteils entstand, ist
+dessen kursweise Auswertung explorativ und noch keine unabhängige
+Bestätigung.
 
+## Zeitliche Nachprüfung
+
+Zusätzlich zum bisherigen Modellvergleich wurde das festgelegte Verfahren
+auf einem späteren Kursdurchlauf geprüft: Training mit 11.031
+Kurseinträgen aus 2013, Prüfung mit 9.123 Einträgen aus 2014J.
+Personen, die in beiden Zeiträumen vorkamen, wurden aus dem Training
+entfernt.
+
+Das Modell mit Histogram Gradient Boosting erreicht auf 2014J eine
+Average Precision (AP) von 0,635; ein Referenzmodell aus Kurs- und
+Anmeldedaten erreicht 0,424. Bei einer Auswahl innerhalb jeder
+Kurspräsentation ergeben sich:
+
+| Hinweise je Kurs | Hinweise | Treffer | Trefferquote | Recall |
+| ---: | ---: | ---: | ---: | ---: |
+| 10 % | 915 | 729 | 79,7 % | 19,9 % |
+| 20 % | 1.827 | 1.225 | 67,0 % | 33,4 % |
+
+Die einfache Regel „fälliges Assessment bis Tag 28 nicht erfüllt“
+erzeugt 634 Hinweise mit 528 Treffern. Das Modell findet bei der
+10-%-Auswahl zusätzlich 228 spätere Fälle unter 325 Personen, die
+diese Regel nicht markiert.
+
+CCC war in den Trainingsdaten aus 2013 nicht vertreten. Die Ergebnisse
+für dieses Modul und die zeitliche Prüfung insgesamt sind daher kein
+Nachweis für eine zuverlässige Übertragung auf neue Einrichtungen.
+Die Modell- und Auswahlentscheidungen wurden zudem bereits durch
+frühere Analysen des OULAD-Datensatzes beeinflusst.
