@@ -106,3 +106,21 @@ für dieses Modul und die zeitliche Prüfung insgesamt sind daher kein
 Nachweis für eine zuverlässige Übertragung auf neue Einrichtungen.
 Die Modell- und Auswahlentscheidungen wurden zudem bereits durch
 frühere Analysen des OULAD-Datensatzes beeinflusst.
+
+## Streamlit-Prototyp
+
+Die Anwendung startet mit einem CSV-Upload. Danach zeigt sie eine Übersicht
+der hochgeladenen Kursdaten, Ansichten je Kurspräsentation und eine
+priorisierte Hinweisliste. Lokal starten mit:
+
+    uv run streamlit run app.py
+
+Der Hinweis bezieht sich am Ende von Tag 28 auf das gemeinsame spätere
+Ergebnis „Abbruch oder Nichtbestehen“. Angaben zu Aktivität und Assessments
+sind beobachtete Merkmale und keine nachgewiesenen individuellen Ursachen.
+
+Ein explorativer Drei-Klassen-Versuch ist in
+`07_getrennte_risiken.ipynb` dokumentiert. Die Unterscheidung zwischen
+Abbruch und Nichtbestehen verbesserte die vorgeschlagene Richtung der
+Unterstützung gegenüber einer einfachen Vergleichsregel kaum. Daher
+zeigt der Prototyp derzeit keine Vorhersage der Risikoart.

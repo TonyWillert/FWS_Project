@@ -1,0 +1,20 @@
+{
+  "stichtag": 28,
+  "schluessel": [
+    "code_module",
+    "code_presentation",
+    "id_student"
+  ],
+  "merkmale": [
+    "code_module",
+    "code_presentation",
+    "anmeldetag",
+    "klicks_tag_0_bis_6",
+    "klicks_tag_7_bis_14",
+    "klicks_tag_15_bis_28",
+    "assessments_faellig_bis28",
+    "abgaben_bis28",
+    "assessments_fehlend_bis28",
+    "banked_faellige_bis28"
+  ]
+}
