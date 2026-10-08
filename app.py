@@ -15,7 +15,6 @@ from weekly_logic import (
     pruefe_csv,
 )
 
-
 PROJEKTORDNER = Path(__file__).resolve().parent
 MODELLORDNER = PROJEKTORDNER / "models" / "oulad_wochen"
 SCHEMADATEI = MODELLORDNER / "schema.json"
@@ -126,7 +125,7 @@ try:
 except (UploadFehler, OSError, ValueError) as fehler:
     st.error(str(fehler))
     st.stop()
-except Exception as fehler:
+except Exception as fehler:  # noqa: BLE001
     st.error(f"Die Modellbewertung ist fehlgeschlagen: {fehler}")
     st.stop()
 
