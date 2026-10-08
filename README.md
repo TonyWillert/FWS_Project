@@ -1,126 +1,107 @@
-# Frühwarnhinweise für Lernende mit OULAD
+# LernRadar: Frühwarnhinweise für Lernende mit OULAD
+
+LernRadar ist ein lokaler Streamlit-Prototyp für die wöchentliche Sichtung von Kursen. Er ordnet Kurseinträge innerhalb jedes Kursdurchlaufs nach einem Modellwert und zeigt die obersten 10 % als **hohe Priorität** sowie die nächsten 10 % zur **weiteren Prüfung**. Ein Hinweis ist ein Anlass für eine fachliche Sichtung und gegebenenfalls ein Unterstützungsangebot, keine automatische Entscheidung über Lernende.
 
 ## Fragestellung
 
-Welche Lernenden, die am Ende von Kurstag 28 noch angemeldet sind, sollten bei begrenzter Betreuungskapazität zuerst ein Unterstützungsangebot erhalten?
+Welche zu einem Kurstag noch angemeldeten Lernenden sollten bei begrenzter Betreuungskapazität zuerst geprüft werden, wenn das gemeinsame Ziel ein **späterer Kursabbruch oder das spätere Kursergebnis `Fail`** ist?
 
-Das Projekt untersucht, ob sich ein späterer Kursabbruch oder das Kursergebnis `Fail` anhand der bis Tag 28 verfügbaren Daten vorhersagen lässt. Ein Hinweis soll eine unterstützende Ansprache ermöglichen; er ist keine automatische Entscheidung über eine Person.
+Der Prototyp betrachtet 16 wöchentliche Stichtage: Tag 6, 13, …, 111. Die Modelle unterscheiden für eine einzelne Person **nicht**, ob eher ein Abbruch oder ein Nichtbestehen bevorsteht. Ein Kurseintrag ist die Anmeldung einer Person zu einem bestimmten Kursdurchlauf; dieselbe Person kann mehrere Kurseinträge haben.
 
 ## Datengrundlage
 
-Verwendet wird der anonymisierte [Open University Learning Analytics Dataset (OULAD)](https://research.stem.open.ac.uk/ouanalyse/dataset/) mit Kurs-, Anmelde-, Assessment- und Aktivitätsdaten aus 2013 und 2014. Für die aktuelle Analyse werden insbesondere `studentInfo.csv`, `studentRegistration.csv`, `assessments.csv`, `studentAssessment.csv` und `studentVle.csv` genutzt.
+Das anonymisierte [Open University Learning Analytics Dataset (OULAD)](https://research.stem.open.ac.uk/ouanalyse/dataset/) umfasst sieben Module mit 22 Durchläufen aus 2013 und 2014. Verwendet werden insbesondere `studentInfo.csv`, `studentRegistration.csv`, `assessments.csv`, `studentAssessment.csv` und `studentVle.csv`. VLE steht für *Virtual Learning Environment*, die virtuelle Lernumgebung. Die historischen Kursdurchläufe dauern 234 bis 269 Tage; Tag 27 liegt entsprechend noch am Anfang eines Kurses.
 
-Die aufbereitete Tag-28-Modellbasis enthält 27.422 Kurseinträge. Bei 12.044 davon (43,9 %) trat später ein Abbruch oder das Kursergebnis `Fail` ein. Die Modellbasis liegt unter `data/processed/oulad_tag28_modellbasis.csv`.
+Für jeden Stichtag enthält die aufbereitete Wochenbasis nur Kurseinträge, die zu diesem Zeitpunkt noch angemeldet sind. Als späterer Fall zählt ein bestätigter Abbruch nach dem Stichtag oder das Kursergebnis `Fail`. Fälle ohne lesbaren Abmeldetag lassen sich für diese zeitliche Abgrenzung nicht zuverlässig zuordnen. Die Wochenbasis unter `data/processed/oulad_wochenmodellbasis_tag6_bis111.csv` umfasst 423.510 Datenstände mit 13 Spalten. Mehrere Datenstände können zum selben Kurseintrag gehören.
 
-## Bisheriges Vorgehen
+Die exportierten Modelle nutzen folgende Eingaben bis zum jeweiligen Stichtag:
 
-1. Datenstruktur, fehlende Werte und Verknüpfungen der Tabellen geprüft.
-2. Zunächst eine Vorhersage späterer Abmeldungen ab Tag 14 untersucht.
-3. Die Fragestellung auf Tag 28 und das gemeinsame Ziel „späterer Abbruch oder Fail“ erweitert.
-4. Merkmale aus Kurs und Anmeldung, VLE-Klicks sowie bis Tag 28 fälligen und erfüllten Assessments erstellt.
-5. Einfache Referenzen, logistische Regression und Histogram Gradient Boosting verglichen.
+| Eingabe | Bedeutung |
+| --- | --- |
+| `code_module`, `code_presentation` | Modul und Kursdurchlauf |
+| `anmeldetag` | Tag der Anmeldung relativ zum Kursbeginn |
+| `assessments_faellig` | Zahl bis dahin fälliger Assessments |
+| `abgaben` | Zahl erfasster eigener Abgaben |
+| `banked_faellige` | Zahl fälliger, angerechneter Leistungen |
+| `assessments_fehlend` | Zahl fälliger Leistungen ohne erfasste Erfüllung |
+| `klicks_bis_stichtag` | Erfasste VLE-Klicks seit Kursbeginn |
+| `klicks_letzte_7_tage` | Erfasste VLE-Klicks in der letzten Kurswoche |
 
-Kurseinträge derselben Person bleiben bei der Aufteilung jeweils gemeinsam im Training oder in der Bewertung. Der Modellvergleich verwendet fünf Validierungs-Folds innerhalb der Entwicklungsdaten und einen zurückgelegten Prüfteil. Assessment-Punktzahlen werden nicht als frühe Merkmale verwendet, da kein Zeitpunkt vorliegt, ab dem die Bewertung bekannt war.
+`id_student` dient nur zur Zuordnung und Trennung von Personen, `stichtag` zur Auswahl des Wochenmodells. Beide sind keine Modellmerkmale. Assessment-Punktzahlen werden nicht verwendet, weil für die Bekanntgabe der Bewertung kein verlässlicher Zeitpunkt vorliegt.
 
-## Vorläufige Ergebnisse
+## Vorgehen und Bewertung
 
-Im zurückgelegten Prüfteil mit 5.474 Kurseinträgen erreicht das Modell mit Histogram Gradient Boosting eine Average Precision (AP) von **0,709**. Ein Referenzmodell allein mit Kurs- und Anmeldedaten erreicht **0,514**.
+1. Rohdateien, Schlüssel, fehlende Werte und Abmeldezeitpunkte geprüft.
+2. Zunächst einen Hinweis für spätere Abmeldungen ab Tag 14 untersucht.
+3. Auf Tag 28 und das gemeinsame Ziel „Abbruch oder Fail“ erweitert; einfache Regeln, logistische Regression, Random Forest und Histogram Gradient Boosting verglichen.
+4. Die Tag-28-Auswertung zeitlich mit 2014J geprüft. Anschließend Wochenstände bis Tag 111, getrennte Modelle je Woche und eine wiederholte kursweise Hinweisauswahl untersucht.
+5. Den Bildungsabschluss zusätzlich geprüft und wegen der starken Verschiebung von Hinweisen zwischen Bildungsgruppen **nicht** in die exportierten Modelle übernommen.
+6. Die Modelle und eine CSV ohne spätere Ergebnisse für die Vorführung exportiert; eine lokale Streamlit-Oberfläche erstellt.
 
-Bei einer Auswahl der höchsten Modellwerte **über alle Kurse hinweg** ergeben sich:
+Die früheren Vergleiche innerhalb der Entwicklungsdaten trennten Trainings- und Validierungsgruppen nach `id_student`. Die exportierten 16 Pipelines verwenden `HistGradientBoostingClassifier` und jeweils nur Trainingsdaten desselben Stichtags aus Präsentationen vor 2014J. Für die Demo und zeitliche Auswertung wurden aus 2014J die 1.403 Personen ausgeschlossen, die auch in früheren Präsentationen vorkommen. Das Training umfasst 282.519 wöchentliche Datenstände; die Demo 121.447 Datenstände von 8.682 unterschiedlichen Kurseinträgen. Die Demo enthält weder `final_result` noch die Zielvariable.
 
-| Anteil mit Hinweis | Trefferquote | Erkannte spätere Fälle (Recall) |
-| ---: | ---: | ---: |
-| 10 % | 89,6 % | 20,1 % |
-| 20 % | 76,9 % | 34,6 % |
+**Average Precision (AP)** bewertet die Reihenfolge aller Kurseinträge anhand des späteren Ergebnisses. **Trefferquote** bezeichnet den Anteil späterer Fälle unter den Hinweisen; **Recall** den Anteil aller späteren Fälle, die einen Hinweis erhalten. Die tatsächliche Fallquote gehört als Vergleichswert immer dazu. Bei der kursweisen Auswahl werden die obersten 10 beziehungsweise 20 % **pro Kursdurchlauf und Stichtag** markiert, bei kleinen Kursen aufgerundet.
 
-Für eine spätere Anwendung erscheint eine Auswahl **innerhalb jedes Kursdurchlaufs** sinnvoller: Bei der kursübergreifenden Auswahl erhielt ein Modul im Prüfteil keinen einzigen Hinweis. Die kursweise Auswahl wurde bisher nur explorativ innerhalb der Entwicklungsdaten geprüft und benötigt noch eine gesonderte Bewertung.
+### Explorative zeitliche Ergebnisse
 
-## Geplanter Prototyp
+Auf 2014J erreicht das Wochenmodell an Tag 27 bei 7.828 noch angemeldeten Kurseinträgen eine AP von **0,625** gegenüber **0,429** für eine Referenz aus Kurs- und Anmeldedaten; der spätere Fallanteil beträgt **37,6 %**. Bei 20 % Hinweisen je Kurs sind es 1.567 Hinweise mit 1.006 Treffern: **64,2 % Trefferquote** und **34,1 % Recall** an diesem Stichtag.
 
-Geplant ist eine einfache lokale Browseroberfläche, die einen vorbereiteten Datensatz einliest. Sie soll einen Überblick über Kurse und relevante Kennzahlen zeigen sowie innerhalb eines gewählten Kursdurchlaufs die Lernenden mit den höchsten Modellwerten anzeigen. Die Oberfläche ist **noch nicht umgesetzt**.
+Bei einer Simulation von 16 wöchentlichen Sichtungen in 2014J erhalten mit der 20-%-Auswahl insgesamt **4.768 von 8.682 Kurseinträgen** mindestens einmal einen Hinweis (54,9 %). Von 3.800 späteren Abbrüchen oder Nichtbestehen werden **2.761** mindestens einmal erkannt (72,7 % kumulativer Recall). Die Trefferquote der erstmaligen Hinweise beträgt 57,9 %. Die wiederholten Wochenhinweise dürfen dabei nicht als unterschiedliche Personen gezählt werden. Ein Wochenbudget von 20 % bedeutet über 16 Wochen also keine Gesamtquote von 20 %.
 
-## Grenzen
+Diese Zahlen stammen aus einer **explorativen** zeitlichen Prüfung: 2014J wurde während der Projektentwicklung mehrfach eingesehen und beeinflusste Entscheidungen. Die Werte sind daher kein Ergebnis eines unberührten Abschlusstests und kein Nachweis der Wirkung einer Intervention. Die verglichenen Stichtage enthalten unterschiedliche noch angemeldete Gruppen; ein höherer Wert in einer späteren Woche beweist nicht, dass diese Woche der beste Zeitpunkt für Unterstützung ist.
 
-- Die Daten stammen aus ausgewählten historischen Kursen einer Universität. Eine Übertragung auf heutige Weiterbildungen oder andere Einrichtungen ist nicht belegt.
-- Das Modell erfasst nur Personen, die am Ende von Tag 28 noch angemeldet sind.
-- „Abbruch“ und „Fail“ haben möglicherweise unterschiedliche Ursachen und erfordern unterschiedliche Unterstützung.
-- VLE-Klicks bilden weder Verständnis noch Lernen außerhalb der Plattform zuverlässig ab.
-- Ein Zusammenhang zwischen Merkmalen und späterem Ergebnis beweist nicht, dass eine Ansprache den Verlauf verbessert.
-- Die Fragestellung wurde nach erster Sichtung des gesamten Datensatzes entwickelt. Auch die Entscheidung für eine kursweise Auswahl entstand nach einer Diagnose des Prüfteils. Deren Güte ist daher noch nicht unabhängig bestätigt.
+### Frühere Tag-28-Analyse
 
-## Projektdateien
+Die erste Tag-28-Modellbasis umfasst 27.422 Kurseinträge, darunter 12.044 spätere Abbrüche oder `Fail` (43,9 %). Im damaligen zurückgelegten Prüfteil erreichte Histogram Gradient Boosting eine AP von 0,709 gegenüber 0,514 für die Referenz aus Kurs- und Anmeldedaten. Diese Auswertung verwendete einen anderen Stichtag und eine andere Aufteilung als die wöchentlichen Analysen; die Werte sollten nicht direkt miteinander verglichen werden. Der Tag-28-Prototyp wurde durch die Wochenversion abgelöst.
 
-- `01_datensichtung.ipynb`: Datensichtung und Erstellung der Modellbasen.
-- `02_modellvergleich.ipynb` bis `04_abschlussbewertung.ipynb`: frühere Untersuchung der Abmeldung ab Tag 14.
-- `05_tag28_modellvergleich.ipynb`: aktueller Modellvergleich und Auswertung für Tag 28.
-- `06_zeitliche_pruefung.ipynb`: Prüfung des festgelegten Modells auf 2014J.
-- `data/demo/oulad_tag28_demo.csv`: historische Vorführdaten ohne späteres
-  Kursergebnis; die Browseroberfläche dafür ist noch geplant.
+## Lokale Anwendung
 
-Die Rohdaten liegen lokal im Ordner `Daten OULAD`. Zum erneuten Ausführen muss der absolute Projektpfad in `01_datensichtung.ipynb` gegebenenfalls an den eigenen Rechner angepasst werden. Danach kann `05_tag28_modellvergleich.ipynb` die erzeugte Tag-28-Modellbasis einlesen.
+Nach dem Klonen im Projektordner die Abhängigkeiten mit der versionierten `uv.lock` abgleichen und mit [uv](https://docs.astral.sh/uv/) starten:
 
-## Nächste Schritte
+```powershell
+uv sync --locked
+uv run streamlit run app.py
+```
 
-- Kursweise Auswahl belastbar bewerten und den Einsatzumfang festlegen.
-- Modelltraining und Vorhersage für den Prototyp reproduzierbar machen.
-- Oberfläche, Ergebnisdarstellung und Präsentation erstellen.
+Die App benötigt `app.py`, `weekly_logic.py`, `models/oulad_wochen/schema.json` und die 16 Dateien `tag_006.joblib` bis `tag_111.joblib`. Nach dem Start erscheint zunächst nur der Upload. Für die Vorführung kann lokal `data/demo/oulad_wochen_2014j.csv` heruntergeladen und anschließend hochgeladen werden. Diese Datei wird durch `11_wochenmodelle_export.ipynb` erzeugt und liegt wegen des ignorierten Ordners `data/` nicht im Git-Repository. Ohne die lokale Datei lässt sich eine entsprechend vorbereitete eigene CSV hochladen; OULAD-Rohdateien sind **kein** direktes Upload-Format.
+
+Die CSV braucht genau diese **Pflichtspalten** (weitere Spalten werden ignoriert):
+
+```text
+code_module,code_presentation,id_student,stichtag,anmeldetag,assessments_faellig,abgaben,banked_faellige,assessments_fehlend,klicks_bis_stichtag,klicks_letzte_7_tage
+```
+
+Die App prüft die Eingaben und lädt für jeden enthaltenen Stichtag sein Modell. Danach zeigt sie einen Überblick je Kursdurchlauf, eine sortierte Prüfliste mit den obersten 10 oder 20 %, beobachtete Klick- und Assessmentwerte, den Verlauf der hochgeladenen Wochen sowie eine kurze Einordnung der Grenzen. „Erstmals“ und „wiederholt“ beziehen sich ausschließlich auf die Wochen, die in **dieser CSV** stehen. Modellwerte werden zur Reihenfolge genutzt; sie sind keine geprüften individuellen Ausfallwahrscheinlichkeiten. Aussagen zu Klicks oder offenen Leistungen beschreiben Beobachtungen und keine nachgewiesenen Gründe für einen Modellhinweis.
+
+## Projektdateien und Reproduktion
+
+| Datei | Inhalt |
+| --- | --- |
+| `01_datensichtung.ipynb` | Rohdaten und erste Modellbasen |
+| `02_modellvergleich.ipynb` bis `04_abschlussbewertung.ipynb` | Frühe Untersuchung des Abbruchs ab Tag 14 |
+| `05_tag28_modellvergleich.ipynb` | Tag-28-Modellvergleich und Bewertung |
+| `06_zeitliche_pruefung.ipynb` | Zeitliche Prüfung der Tag-28-Variante |
+| `07_getrennte_risiken.ipynb` | Explorative Unterscheidung von Abbruch und Nichtbestehen |
+| `08_zeitfenster.ipynb`, `09_wochenvergleich.ipynb` | Wochenstände, Stichtage und wiederholte Hinweise |
+| `10_bildungshintergrund.ipynb` | Zusatzmerkmal Bildungsabschluss und Gruppenvergleich |
+| `11_wochenmodelle_export.ipynb` | Training und Export der Wochenmodelle, Schema und Demo-CSV |
+| `app.py`, `weekly_logic.py` | Oberfläche sowie CSV-Prüfung, Modellbewertung und Hinweisauswahl |
+| `models/oulad_wochen/` | Gespeichertes Schema und 16 Modell-Pipelines |
+
+Die OULAD-Rohdaten und die aufbereiteten Dateien unter `data/` liegen lokal und werden nicht mit Git versioniert. Zum erneuten Erzeugen müssen die Rohdateien in der erwarteten Projektstruktur vorliegen und gegebenenfalls absolute Pfade in den frühen Notebooks an den eigenen Rechner angepasst werden. Das Exportnotebook setzt die vorbereitete Wochenbasis voraus; es erstellt sie nicht aus den Roh-CSV-Dateien. Die Ausführung der Notebooks ist daher in der beschriebenen Abhängigkeitsreihenfolge nötig. Gespeicherte `joblib`-Modelle nur aus vertrauenswürdigen Quellen laden.
+
+## Grenzen und nächste Schritte
+
+- OULAD beschreibt ausgewählte historische Fernstudienkurse; eine Übertragung auf heutige Weiterbildungen, andere Einrichtungen oder alle Lernenden ist nicht belegt.
+- Nur zum jeweiligen Stichtag noch angemeldete Personen können einen Hinweis bekommen. Bereits erfolgte Abbrüche können damit nicht verhindert werden.
+- Das gemeinsame Ziel verschmilzt Abbruch und Nichtbestehen. Der explorative Drei-Klassen-Versuch lieferte keine ausreichend verlässliche individuelle Risikorichtung für eine getrennte Anzeige.
+- VLE-Klicks sind weder Lernzeit noch Verständnis; Lernen außerhalb der Plattform bleibt unsichtbar. Auch ein fehlendes Assessment kann im Einzelfall Daten- oder Prozessgründe haben.
+- Der Bildungsabschluss verbesserte die mittlere Modellgüte an ausgewählten Stichtagen, verschob aber die Hinweise stark zwischen Bildungsgruppen. Auch ohne dieses Merkmal können andere Eingaben Ungleichheiten abbilden; die Gruppenprüfung ist nicht abgeschlossen.
+- Die Prüfgruppe 2014J ist durch wiederholte Einsicht während der Entwicklung explorativ. Eine unabhängige zeitliche und externe Prüfung sowie die Bewertung von Fehlhinweisen und möglicher Benachteiligung fehlen.
+- Eine hohe Trefferquote belegt weder kausale Gründe noch, dass eine Ansprache den Kursverlauf verbessert. Vor einem realen Einsatz braucht es fachlich abgestimmte Maßnahmen, Datenschutzprüfung und eine Bewertung im jeweiligen Bildungskontext.
+
+Als Nächstes werden die verbleibenden Datenmöglichkeiten und methodischen Grenzen bewertet. Anschließend folgt ein Verständlichkeitstest der Oberfläche mit einer fachfremden Person und die Vorbereitung der Präsentation.
 
 ## Quelle
 
-Kuzilek, J., Hlosta, M. & Zdrahal, Z. (2017):
-[Open University Learning Analytics dataset](https://doi.org/10.1038/sdata.2017.171).
-
-Für die geplante Ansicht werden Hinweise innerhalb jeder Kurspräsentation
-vergeben. Diese Auswahl erreicht im zurückgelegten Prüfteil bei rund 10 %
-Hinweisen eine Trefferquote von 84,9 % und einen Recall von 19,5 %.
-Sie wurde zuvor auch innerhalb der Entwicklungsdaten untersucht. Da die
-Entscheidung für diese Auswahl nach Sichtung des Prüfteils entstand, ist
-dessen kursweise Auswertung explorativ und noch keine unabhängige
-Bestätigung.
-
-## Zeitliche Nachprüfung
-
-Zusätzlich zum bisherigen Modellvergleich wurde das festgelegte Verfahren
-auf einem späteren Kursdurchlauf geprüft: Training mit 11.031
-Kurseinträgen aus 2013, Prüfung mit 9.123 Einträgen aus 2014J.
-Personen, die in beiden Zeiträumen vorkamen, wurden aus dem Training
-entfernt.
-
-Das Modell mit Histogram Gradient Boosting erreicht auf 2014J eine
-Average Precision (AP) von 0,635; ein Referenzmodell aus Kurs- und
-Anmeldedaten erreicht 0,424. Bei einer Auswahl innerhalb jeder
-Kurspräsentation ergeben sich:
-
-| Hinweise je Kurs | Hinweise | Treffer | Trefferquote | Recall |
-| ---: | ---: | ---: | ---: | ---: |
-| 10 % | 915 | 729 | 79,7 % | 19,9 % |
-| 20 % | 1.827 | 1.225 | 67,0 % | 33,4 % |
-
-Die einfache Regel „fälliges Assessment bis Tag 28 nicht erfüllt“
-erzeugt 634 Hinweise mit 528 Treffern. Das Modell findet bei der
-10-%-Auswahl zusätzlich 228 spätere Fälle unter 325 Personen, die
-diese Regel nicht markiert.
-
-CCC war in den Trainingsdaten aus 2013 nicht vertreten. Die Ergebnisse
-für dieses Modul und die zeitliche Prüfung insgesamt sind daher kein
-Nachweis für eine zuverlässige Übertragung auf neue Einrichtungen.
-Die Modell- und Auswahlentscheidungen wurden zudem bereits durch
-frühere Analysen des OULAD-Datensatzes beeinflusst.
-
-## Streamlit-Prototyp
-
-Die Anwendung startet mit einem CSV-Upload. Danach zeigt sie eine Übersicht
-der hochgeladenen Kursdaten, Ansichten je Kurspräsentation und eine
-priorisierte Hinweisliste. Lokal starten mit:
-
-    uv run streamlit run app.py
-
-Der Hinweis bezieht sich am Ende von Tag 28 auf das gemeinsame spätere
-Ergebnis „Abbruch oder Nichtbestehen“. Angaben zu Aktivität und Assessments
-sind beobachtete Merkmale und keine nachgewiesenen individuellen Ursachen.
-
-Ein explorativer Drei-Klassen-Versuch ist in
-`07_getrennte_risiken.ipynb` dokumentiert. Die Unterscheidung zwischen
-Abbruch und Nichtbestehen verbesserte die vorgeschlagene Richtung der
-Unterstützung gegenüber einer einfachen Vergleichsregel kaum. Daher
-zeigt der Prototyp derzeit keine Vorhersage der Risikoart.
+Kuzilek, J., Hlosta, M. & Zdrahal, Z. (2017): [Open University Learning Analytics dataset](https://doi.org/10.1038/sdata.2017.171). *Scientific Data*, 4, 170171. Der Datensatz wird unter [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) bereitgestellt.

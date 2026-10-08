@@ -1,0 +1,50 @@
+{
+  "version": "wochenmodell_v1",
+  "stichtage": [
+    6,
+    13,
+    20,
+    27,
+    34,
+    41,
+    48,
+    55,
+    62,
+    69,
+    76,
+    83,
+    90,
+    97,
+    104,
+    111
+  ],
+  "eingabespalten": [
+    "code_module",
+    "code_presentation",
+    "id_student",
+    "stichtag",
+    "anmeldetag",
+    "assessments_faellig",
+    "abgaben",
+    "banked_faellige",
+    "assessments_fehlend",
+    "klicks_bis_stichtag",
+    "klicks_letzte_7_tage"
+  ],
+  "modellspalten": [
+    "code_module",
+    "code_presentation",
+    "anmeldetag",
+    "assessments_faellig",
+    "abgaben",
+    "banked_faellige",
+    "assessments_fehlend",
+    "klicks_bis_stichtag",
+    "klicks_letzte_7_tage"
+  ],
+  "modellpfad_muster": "tag_{stichtag:03d}.joblib",
+  "hinweisanteile_je_kurs": [
+    10,
+    20
+  ]
+}
