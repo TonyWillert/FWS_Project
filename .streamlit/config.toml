@@ -1,6 +1,15 @@
+# Die Person kann über das Streamlit-Menü zwischen hell und dunkel wechseln.
 [theme]
 base = "light"
-primaryColor = "#6035E8"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F5F4FA"
-textColor = "#171327"
+
+[theme.light]
+primaryColor = "#9B4933"
+backgroundColor = "#FAF8F3"
+secondaryBackgroundColor = "#EEECE5"
+textColor = "#24332F"
+
+[theme.dark]
+primaryColor = "#9B4933"
+backgroundColor = "#152321"
+secondaryBackgroundColor = "#253531"
+textColor = "#F4F0E8"

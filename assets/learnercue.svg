@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">LearnerCue</title>
+  <rect width="64" height="64" rx="16" fill="#9B4933"/>
+  <path d="M12 18c8-2 14-1 20 3v27c-6-4-12-5-20-3V18Zm40 0c-8-2-14-1-20 3v27c6-4 12-5 20-3V18Z" fill="none" stroke="#FFF9F1" stroke-width="3.3" stroke-linejoin="round"/>
+  <path d="M18 28c4-.3 7 .2 10 2M36 30c3-1.8 6-2.3 10-2" fill="none" stroke="#FFF9F1" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="32" cy="13" r="3.2" fill="#FFF9F1"/>
+</svg>

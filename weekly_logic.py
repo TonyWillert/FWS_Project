@@ -162,6 +162,32 @@ def bewerte_wochen(daten: pd.DataFrame, schema: dict, modell_laden) -> pd.DataFr
         "hinweisstatus",
     ] = "Erstmals im Upload"
 
-    if len(daten["stichtag"].unique()) == 1 and daten["stichtag"].iloc[0] != 6:
-        ergebnis.loc[hinweis, "hinweisstatus"] = "Ohne Verlauf"
+    # Für die kurze Prüfliste zählt ein früherer Platz 11–20 % noch nicht als
+    # früherer Hinweis auf dieser kurzen Liste.
+    first_high_days = (
+        ergebnis.loc[hoch]
+        .groupby(SCHLUESSEL)["stichtag"]
+        .min()
+        .rename("ersthinweis_tag_10")
+    )
+    ergebnis = ergebnis.join(first_high_days, on=SCHLUESSEL)
+    ergebnis["hinweisstatus_10"] = "Kein Hinweis"
+    ergebnis.loc[hoch, "hinweisstatus_10"] = "Wiederholt im Upload"
+    ergebnis.loc[
+        hoch & ergebnis["stichtag"].eq(ergebnis["ersthinweis_tag_10"]),
+        "hinweisstatus_10",
+    ] = "Erstmals im Upload"
+
+    # Der erste hochgeladene Stichtag nach Tag 6 hat keinen beobachteten
+    # Vorlauf, auch wenn dieselbe CSV spätere Wochen enthält.
+    first_uploaded_day = int(daten["stichtag"].min())
+    if first_uploaded_day != 6:
+        ergebnis.loc[
+            hinweis & ergebnis["stichtag"].eq(first_uploaded_day),
+            "hinweisstatus",
+        ] = "Ohne Verlauf"
+        ergebnis.loc[
+            hoch & ergebnis["stichtag"].eq(first_uploaded_day),
+            "hinweisstatus_10",
+        ] = "Ohne Verlauf"
     return ergebnis
