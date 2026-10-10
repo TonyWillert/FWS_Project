@@ -1,13 +1,19 @@
-"""LernRadar: Wochenmonitor für den OULAD-Portfolio-Prototyp."""
+"""LearnerCue: wöchentliche fachliche Sichtung historischer OULAD-Kurse."""
 
+import logging
+import math
 from pathlib import Path
 
-import pandas as pd
 import streamlit as st
 
+from operations import course_workload
+from project_context import (
+    CONTEXT, DATASET_URL, PAPER_URL, course_profile, file_overview, module_overview,
+)
+from reporting import course_report
+from ui_text import local_group, local_status, local_upload_error, tr
 from weekly_logic import (
     KURS,
-    SCHLUESSEL,
     UploadFehler,
     bewerte_wochen,
     lade_modell,
@@ -15,400 +21,601 @@ from weekly_logic import (
     pruefe_csv,
 )
 
+logger = logging.getLogger(__name__)
 PROJEKTORDNER = Path(__file__).resolve().parent
 MODELLORDNER = PROJEKTORDNER / "models" / "oulad_wochen"
 SCHEMADATEI = MODELLORDNER / "schema.json"
 DEMODATEI = PROJEKTORDNER / "data" / "demo" / "oulad_wochen_2014j.csv"
+LOGO = PROJEKTORDNER / "assets" / "learnercue.svg"
 
-st.set_page_config(page_title="LernRadar | Wochenmonitor", layout="wide")
-
+st.set_page_config(
+    page_title="LearnerCue | Course review", page_icon=str(LOGO), layout="wide"
+)
+# Abstand zur festen Streamlit-Leiste: Bedienelemente beginnen darunter.
 st.markdown(
-    """
-    <style>
-    .block-container { max-width: 1240px; padding-top: 2rem; }
-    .lr-hero { background: linear-gradient(105deg, #102948, #17676d);
-               color: white; padding: 1.5rem 1.8rem; border-radius: 16px;
-               margin-bottom: 1.3rem; }
-    .lr-hero h1 { color: white; margin: 0; font-size: 2.2rem; }
-    .lr-hero p { margin: .5rem 0 0; color: #e3f6f4; }
-    div[data-testid="stMetric"] { background: #f2f7f8; padding: .8rem 1rem;
-                                   border-radius: 12px; }
-    </style>
-    <div class="lr-hero">
-      <h1>LernRadar</h1>
-      <p>Wöchentliche Übersicht für eine unterstützende Sichtung von Kursen</p>
-    </div>
-    """,
+    "<style>.block-container {max-width: 1180px; padding-top: 5rem}</style>",
     unsafe_allow_html=True,
 )
 
-st.markdown("### 1 · Wochenstände hochladen")
-st.write(
-    "Lade eine **aufbereitete OULAD-CSV** mit einem oder mehreren Stichtagen hoch. "
-    "Jede Zeile beschreibt einen noch angemeldeten Kurseintrag an einem Kurstag. "
-    "Für die Auswahl der obersten 10 oder 20 % sollte jeweils der vollständige "
-    "Kursdurchlauf im Upload enthalten sein."
-)
+marke, kopf = st.columns([1, 11], vertical_alignment="center")
+with marke:
+    st.image(str(LOGO), width=54)
+with kopf:
+    st.title("LearnerCue")
+st.caption(tr(st.session_state.get("language_v2", "de"), "tagline"))
 
-with st.expander("Kurzanleitung und benötigte Daten"):
-    st.markdown(
-        "1. Lade die Vorführdatei herunter oder bereite Kursdaten im Wochenformat auf.\n"
-        "2. Lade die CSV hoch und wähle den Kurstag.\n"
-        "3. Sieh dir die Kursübersicht an; öffne dann einen Kursdurchlauf.\n"
-        "4. Prüfe Hinweise und beobachtete Merkmale fachlich, bevor du Kontakt aufnimmst."
-    )
-    st.caption(
-        "Die OULAD-Rohdateien lassen sich hier nicht direkt hochladen. "
-        "Die benötigte Datei entsteht durch die Aufbereitung in den Notebooks."
+# Sprachwahl und Hilfe stehen in einer eigenen Zeile; bei schmaler Ansicht
+# verdrängen sie weder das Logo noch die feste Menüleiste.
+sprache, hilfe, fehlerknopf = st.columns([2, 1, 1], vertical_alignment="bottom")
+with sprache:
+    language = st.selectbox(
+        "Sprache / Language",
+        ["de", "en"],
+        format_func=lambda code: "Deutsch" if code == "de" else "English",
+        key="language_v2",
     )
 
-if DEMODATEI.exists():
+
+def render_project_context(selected_language: str):
+    """Zeigt belegte OULAD-Fakten und den Stand des Prototyps zweisprachig."""
+    content = CONTEXT[selected_language]
+    st.subheader(content["title"])
+    st.markdown(content["lead"])
+
+    with st.expander(content["source_title"], expanded=True):
+        st.write(content["source_body"])
+        st.caption(content["selection"])
+        st.markdown(f"**{content['files_title']}**")
+        st.dataframe(file_overview(selected_language), hide_index=True, width="stretch")
+
+    st.markdown(f"**{content['courses_title']}**")
+    st.dataframe(module_overview(selected_language), hide_index=True, width="stretch")
+    st.caption(content["courses_note"])
+    st.markdown(f"**{content['content_title']}**")
+    st.write(content["content_body"])
+
+    with st.expander(content["demo_title"]):
+        st.write(content["demo_body"])
+    with st.expander(content["model_title"]):
+        st.write(content["model_body"])
+        st.write(content["label_body"])
+    with st.expander(content["evidence_title"]):
+        st.write(content["evidence_body"])
+
+    st.markdown(f"**{content['benefit_title']}**")
+    st.write(content["benefit_body"])
+    with st.expander(content["ideas_title"]):
+        st.write(content["ideas_body"])
+    with st.expander(content["limits_title"], expanded=True):
+        for limit in content["limits"]:
+            st.markdown(f"- {limit}")
+
+    st.markdown(f"**{content['sources_title']}**")
+    st.markdown(f"- [{content['source_label']}]({DATASET_URL})")
+    st.markdown(f"- [{content['paper_label']}]({PAPER_URL})")
+    st.caption(content["readme_note"])
+
+
+@st.dialog(tr(language, "help_title"), width="large")
+def show_help():
+    """Bietet eine kurze Bedienhilfe und den ausführlichen Hintergrund vor Upload."""
+    quick, background = st.tabs(
+        [tr(language, "help_quick"), tr(language, "help_background")]
+    )
+    with quick:
+        st.subheader(tr(language, "help_start"))
+        st.markdown(tr(language, "help_steps"))
+        st.info(tr(language, "theme_help"))
+        st.subheader(tr(language, "glossary"))
+        for key in (
+            "gloss_entry", "gloss_course", "gloss_hint", "gloss_first",
+            "gloss_vle", "gloss_assessment", "gloss_score", "gloss_csv",
+            "gloss_ap", "gloss_recall",
+        ):
+            st.write(tr(language, key))
+        st.subheader(tr(language, "limitations"))
+        st.write(tr(language, "limits_text"))
+        st.subheader(tr(language, "manager_method"))
+        st.write(tr(language, "manager_formula"))
+    with background:
+        render_project_context(language)
+
+
+@st.dialog(tr(language, "bug_title"), width="large")
+def show_bug_report():
+    """Sammelt einen Bericht ausschließlich zum lokalen Herunterladen."""
+    st.write(tr(language, "bug_intro"))
+    observed = st.text_area(tr(language, "bug_observed"), key="bug_observed")
+    expected = st.text_area(tr(language, "bug_expected"), key="bug_expected")
+    steps = st.text_area(tr(language, "bug_steps"), key="bug_steps")
+    st.warning(tr(language, "bug_privacy"))
+    # Keine Kursdatei, ID oder sonstige Upload-Daten werden automatisch beigelegt.
+    body = (
+        "LearnerCue — bug report\n\n"
+        f"Observed / Beobachtet:\n{observed}\n\n"
+        f"Expected / Erwartet:\n{expected}\n\n"
+        f"Steps / Schritte:\n{steps}\n"
+    )
     st.download_button(
-        "OULAD-Vorführdatei herunterladen",
-        data=DEMODATEI.read_bytes(),
-        file_name=DEMODATEI.name,
-        mime="text/csv",
+        tr(language, "bug_download"),
+        data=body.encode("utf-8"),
+        file_name="learnercue_bug_report.txt",
+        mime="text/plain",
+        disabled=not observed.strip(),
+    )
+    if not observed.strip():
+        st.caption(tr(language, "bug_missing"))
+    st.link_button(
+        tr(language, "bug_issue"),
+        "https://github.com/TonyWillert/FWS_Project/issues/new",
     )
 
-upload = st.file_uploader("Wochen-CSV auswählen", type="csv")
 
-# Vor dem Upload gibt es weder Grafiken noch Modellhinweise.
+with hilfe:
+    if st.button(tr(language, "help_button"), use_container_width=True):
+        show_help()
+with fehlerknopf:
+    if st.button(tr(language, "bug_button"), use_container_width=True):
+        show_bug_report()
+
+# Vor einem Upload sind weder Kursgrafiken noch Hinweise sichtbar.
+hat_upload = st.session_state.get("wochen_csv") is not None
+with st.expander(
+    tr(language, "change_data" if hat_upload else "data_title"),
+    expanded=not hat_upload,
+):
+    st.write(tr(language, "data_intro"))
+    if DEMODATEI.exists():
+        st.download_button(
+            tr(language, "demo_download"),
+            data=DEMODATEI.read_bytes(),
+            file_name=DEMODATEI.name,
+            mime="text/csv",
+        )
+    upload = st.file_uploader(
+        tr(language, "upload_label"), type="csv", key="wochen_csv",
+        help=tr(language, "upload_help"),
+    )
+    st.caption(tr(language, "upload_help"))
+
 if upload is None:
-    st.info("Nach dem Upload erscheinen Kursübersicht und Hinweise.")
+    st.info(tr(language, "no_upload"))
     st.stop()
 
 try:
     schema = lade_schema(MODELLORDNER)
-except (UploadFehler, OSError, ValueError) as fehler:
-    st.error(str(fehler))
+except (UploadFehler, OSError, ValueError) as error:
+    # Fehlende lokale Modelldateien sind ein technischer Fehler, kein CSV-Fehler.
+    logger.warning("Wochenmodell konnte nicht geladen werden: %s", error)
+    st.error(tr(language, "model_error"))
     st.stop()
-
-with st.expander("Erwartete Spalten der hochgeladenen CSV"):
-    st.code(", ".join(schema["eingabespalten"]), language=None)
-    st.caption("Zusätzliche Spalten, auch spätere Kursergebnisse, werden ignoriert.")
 
 
 @st.cache_resource(show_spinner=False)
-def modell_fuer_tag(stichtag: int, geaendert_ns: int | None):
-    """Lädt ein Modell einmal pro Stichtag und Dateiversion."""
-    return lade_modell(MODELLORDNER, schema, stichtag)
+def model_for_day(day: int, version_ns: int | None):
+    """Lädt eine Pipeline je Kurstag und Dateiversion aus dem Projektordner."""
+    return lade_modell(MODELLORDNER, schema, day)
 
 
 @st.cache_data(show_spinner=False)
-def verarbeite_upload(dateiinhalt: bytes, dateisignatur: tuple):
-    """Prüft und bewertet den Upload einmal pro Datei und Modellversion."""
-    daten = pruefe_csv(dateiinhalt, schema)
-    versionszeiten = dict(dateisignatur[1])
+def process_upload(content: bytes, signature: tuple):
+    """Prüft und bewertet die CSV nur erneut, wenn Datei oder Modelle wechseln."""
+    validated = pruefe_csv(content, schema)
+    version_times = dict(signature[1])
     return bewerte_wochen(
-        daten,
-        schema,
-        lambda tag: modell_fuer_tag(tag, versionszeiten[tag]),
+        validated, schema,
+        lambda day: model_for_day(day, version_times[day]),
     )
 
 
-# Ein erneuter Modell-Export macht den Streamlit-Cache automatisch ungültig.
-signatur = (
-    SCHEMADATEI.stat().st_mtime_ns,
-    tuple(
-        (
-            int(tag),
-            pfad.stat().st_mtime_ns if pfad.exists() else None,
-        )
-        for tag in schema["stichtage"]
-        for pfad in [MODELLORDNER / schema["modellpfad_muster"].format(stichtag=tag)]
+# Eine neue Modelldatei macht die zwischengespeicherten Ergebnisse ungültig.
+try:
+    signature = (
+        SCHEMADATEI.stat().st_mtime_ns,
+        tuple(
+            (
+                int(day),
+                path.stat().st_mtime_ns if path.exists() else None,
+            )
+            for day in schema["stichtage"]
+            for path in [
+                MODELLORDNER / schema["modellpfad_muster"].format(stichtag=day)
+            ]
+        ),
+    )
+    with st.spinner(tr(language, "load_spinner")):
+        data = process_upload(upload.getvalue(), signature)
+except UploadFehler as error:
+    message = local_upload_error(language, str(error))
+    st.error(message)
+    if language == "en" and message == tr(language, "upload_error"):
+        with st.expander(tr(language, "technical_details")):
+            st.code(str(error), language=None)
+    st.stop()
+except (OSError, ValueError):
+    logger.exception("Fehler beim Lesen der Modell-Dateien")
+    st.error(tr(language, "model_error"))
+    st.stop()
+except Exception:
+    logger.exception("Unerwarteter Fehler bei der Modellbewertung")
+    st.error(tr(language, "model_error"))
+    st.stop()
+
+# Der jüngste im Upload enthaltene Stichtag ist für den Coach voreingestellt.
+days = sorted(int(day) for day in data["stichtag"].unique())
+st.caption(tr(language, "loaded", n=len(data), file=upload.name))
+day = st.selectbox(
+    tr(language, "day_label"), days, index=len(days) - 1,
+    format_func=lambda value: tr(
+        language, "day_option", day=value, week=(value + 1) // 7
     ),
 )
+week = data.loc[data["stichtag"].eq(day)].copy()
+history_known = day == 6 or any(earlier < day for earlier in days)
+st.caption(tr(language, "history_known" if history_known else "history_unknown"))
 
-try:
-    with st.spinner("Wochenstände werden geprüft und bewertet …"):
-        daten = verarbeite_upload(upload.getvalue(), signatur)
-except (UploadFehler, OSError, ValueError) as fehler:
-    st.error(str(fehler))
-    st.stop()
-except Exception as fehler:  # noqa: BLE001
-    st.error(f"Die Modellbewertung ist fehlgeschlagen: {fehler}")
-    st.stop()
-
-verfuegbare_tage = sorted(int(tag) for tag in daten["stichtag"].unique())
-vorgabe = verfuegbare_tage.index(27) if 27 in verfuegbare_tage else len(verfuegbare_tage) - 1
-meldung = (
-    f"{len(daten):,} Wochenstände eingelesen · "
-    f"{len(daten[SCHLUESSEL].drop_duplicates()):,} verschiedene Kurseinträge."
+# Diese Kursübersicht zeigt nur einen Datenstand je Kurs und ausgewähltem Tag.
+overview = (
+    week.assign(
+        is_alert=week["hinweisstufe"].ne("Kein Hinweis"),
+        first=week["hinweisstatus"].eq("Erstmals im Upload"),
+        repeated=week["hinweisstatus"].eq("Wiederholt im Upload"),
+        due=week["assessments_fehlend"].gt(0),
+    )
+    .groupby(KURS, as_index=False)
+    .agg(
+        entries=("id_student", "size"),
+        alerts=("is_alert", "sum"),
+        first=("first", "sum"),
+        repeated=("repeated", "sum"),
+        due=("due", "sum"),
+    )
 )
-st.success(meldung.replace(",", "."))
-
-st.markdown("### 2 · Woche wählen")
-stichtag = st.selectbox(
-    "Kurstag",
-    verfuegbare_tage,
-    index=vorgabe,
-    format_func=lambda tag: f"Tag {tag} · Woche {(tag + 1) // 7}",
+overview["course"] = overview["code_module"] + " " + overview["code_presentation"]
+overview = overview.sort_values(
+    ["first", "alerts", "course"], ascending=[False, False, True]
 )
-woche = daten.loc[daten["stichtag"].eq(stichtag)].copy()
-hinweise = woche["hinweisstufe"].ne("Kein Hinweis")
+course_names = overview["course"].tolist()
 
-if len(verfuegbare_tage) == 1 and stichtag != 6:
-    st.warning(
-        "Dieser Upload enthält nur einen Stichtag. Ob ein Hinweis schon "
-        "in einer früheren Woche bestand, lässt sich damit nicht feststellen."
-    )
-else:
-    st.caption(
-        "‚Erstmals‘ und ‚wiederholt‘ beziehen sich ausschließlich auf "
-        "die Wochenstände dieser hochgeladenen Datei."
-    )
 
-tab_ueberblick, tab_kurs, tab_verlauf, tab_hilfe = st.tabs(
-    ["Überblick", "Kurs & Hinweise", "Verlauf", "Einordnung"]
+def open_course(name: str):
+    """Öffnet nach einem Klick die Prüfliste des gewählten Kursdurchlaufs."""
+    st.session_state["course_focus"] = name
+    st.session_state["view_v2"] = "course"
+
+
+def open_context():
+    """Öffnet die belegten Hintergrundinfos zu Modulen und Demo."""
+    st.session_state["view_v2"] = "background"
+
+
+view = st.radio(
+    tr(language, "nav"), ["week", "course", "manager", "background"],
+    format_func=lambda value: tr(language, "nav_" + value),
+    horizontal=True, key="view_v2",
 )
 
-with tab_ueberblick:
-    st.subheader(f"Überblick am Ende von Tag {stichtag}")
-    st.caption(
-        "Die Grafiken beschreiben hochgeladene Kurseinträge. Eine Person "
-        "kann in mehreren Kursdurchläufen stehen."
+if view == "week":
+    st.subheader(tr(language, "nav_week"))
+    st.write(tr(language, "week_intro"))
+    left, middle, right = st.columns(3)
+    left.metric(tr(language, "metric_entries"), len(week))
+    middle.metric(tr(language, "metric_courses"), len(overview))
+    right.metric(
+        tr(language, "metric_hints"), int(overview["alerts"].sum()),
+        help=tr(language, "metric_hints_help"),
     )
-    a, b, c, d = st.columns(4)
-    a.metric("Kurseinträge", len(woche))
-    b.metric("Kursdurchläufe", woche[KURS].drop_duplicates().shape[0])
-    c.metric("Hinweise (oberste 20 % je Kurs)", int(hinweise.sum()))
-    d.metric(
-        "Erstmals im Upload",
-        int(woche["hinweisstatus"].eq("Erstmals im Upload").sum())
-        if len(verfuegbare_tage) > 1 or stichtag == 6 else "–",
-    )
-
-    uebersicht = (
-        woche.assign(
-            hohe_prioritaet=woche["hinweisstufe"].eq("Hohe Priorität"),
-            weitere_pruefung=woche["hinweisstufe"].eq("Weitere Prüfung"),
-            offenes_assessment=woche["assessments_fehlend"].gt(0),
-        )
-        .groupby(KURS, as_index=False)
-        .agg(
-            kurseintraege=("id_student", "size"),
-            hohe_prioritaet=("hohe_prioritaet", "sum"),
-            weitere_pruefung=("weitere_pruefung", "sum"),
-            offenes_assessment=("offenes_assessment", "sum"),
-        )
-    )
-    uebersicht["Kurs"] = (
-        uebersicht["code_module"] + " " + uebersicht["code_presentation"]
-    )
-    uebersicht["Anteil mit offenem Assessment (%)"] = (
-        100 * uebersicht["offenes_assessment"] / uebersicht["kurseintraege"]
-    ).round(1)
-
-    links, rechts = st.columns(2)
-    with links:
-        st.markdown("**Kurseinträge je Kursdurchlauf**")
-        st.bar_chart(uebersicht, x="Kurs", y="kurseintraege")
-        st.caption("Größe der im Upload enthaltenen Kursdurchläufe.")
-    with rechts:
-        st.markdown("**Anteil mit offenem fälligem Assessment**")
-        st.bar_chart(uebersicht, x="Kurs", y="Anteil mit offenem Assessment (%)")
-        st.caption(
-            "Anteil der Kurseinträge mit mindestens einer bis zum Stichtag "
-            "fälligen Leistung ohne erfasste Erfüllung."
-        )
+    displayed = overview[["course", "entries", "alerts", "due"]].copy()
+    if history_known:
+        displayed = overview[
+            ["course", "entries", "alerts", "first", "repeated", "due"]
+        ].copy()
     st.dataframe(
-        uebersicht[
-            ["Kurs", "kurseintraege", "hohe_prioritaet",
-             "weitere_pruefung", "offenes_assessment"]
-        ].rename(columns={
-            "kurseintraege": "Kurseinträge",
-            "hohe_prioritaet": "Hohe Priorität (10 %)",
-            "weitere_pruefung": "Weitere Prüfung (nächste 10 %)",
-            "offenes_assessment": "Mit offenem fälligem Assessment",
-        }),
-        hide_index=True,
-    )
-
-with tab_kurs:
-    st.subheader("Einen Kursdurchlauf prüfen")
-    kurse = woche[KURS].drop_duplicates().sort_values(KURS).reset_index(drop=True)
-    kurse["Name"] = kurse["code_module"] + " " + kurse["code_presentation"]
-    wahl = st.selectbox("Kursdurchlauf", range(len(kurse)),
-                         format_func=lambda i: kurse.iloc[i]["Name"])
-    modul = kurse.iloc[wahl]["code_module"]
-    praesentation = kurse.iloc[wahl]["code_presentation"]
-    kurs = woche.loc[
-        woche["code_module"].eq(modul)
-        & woche["code_presentation"].eq(praesentation)
-    ].sort_values("modellwert", ascending=False, kind="stable")
-
-    quote = st.radio(
-        "Umfang der Prüfliste",
-        [10, 20],
-        format_func=lambda wert: (
-            "Nur hohe Priorität (10 %)" if wert == 10
-            else "Hohe Priorität und weitere Prüfung (20 %)"
-        ),
-        horizontal=True,
-    )
-    ausgewaehlt = kurs.loc[
-        kurs["hinweisstufe"].eq("Hohe Priorität")
-        if quote == 10 else kurs["hinweisstufe"].ne("Kein Hinweis")
-    ].copy()
-
-    a, b, c, d = st.columns(4)
-    a.metric("Kurseinträge", len(kurs))
-    b.metric("Auf der Prüfliste", len(ausgewaehlt))
-    c.metric(
-        "Davon erstmals im Upload",
-        int(ausgewaehlt["hinweisstatus"].eq("Erstmals im Upload").sum())
-        if len(verfuegbare_tage) > 1 or stichtag == 6 else "–",
-    )
-    d.metric("Mit offenem Assessment", int(kurs["assessments_fehlend"].gt(0).sum()))
-
-    st.info(
-        "Die Liste priorisiert eine fachliche Sichtung. Das Modellziel ist "
-        "späterer Abbruch **oder** späteres Nichtbestehen; es bestimmt "
-        "für eine einzelne Person nicht die Art des möglichen Ergebnisses."
-    )
-    st.dataframe(
-        ausgewaehlt[
-            ["id_student", "hinweisstufe", "hinweisstatus",
-             "assessments_faellig", "assessments_fehlend", "abgaben",
-             "klicks_letzte_7_tage", "klicks_bis_stichtag"]
-        ].rename(columns={
-            "id_student": "Anonymisierte ID",
-            "hinweisstufe": "Prüfgruppe",
-            "hinweisstatus": "Verlauf des Hinweises",
-            "assessments_faellig": "Fällige Assessments",
-            "assessments_fehlend": "Ohne erfasste Erfüllung",
-            "abgaben": "Eigene Abgaben",
-            "klicks_letzte_7_tage": "VLE-Klicks letzte 7 Tage",
-            "klicks_bis_stichtag": "VLE-Klicks bis Tag",
-        }),
-        hide_index=True,
-    )
-    st.caption(
-        "Die Reihenfolge folgt dem Modellwert innerhalb dieses Kurses. "
-        "Ein Modellwert ist hier keine geprüfte individuelle Ausfallwahrscheinlichkeit."
-    )
-
-    st.markdown("**Offene fällige Assessments in diesem Kurs**")
-    verteilung = (
-        kurs["assessments_fehlend"].clip(upper=3)
-        .value_counts().reindex([0, 1, 2, 3], fill_value=0)
-    )
-    st.bar_chart(pd.DataFrame({
-        "Offene Assessments": ["0", "1", "2", "3 oder mehr"],
-        "Kurseinträge": verteilung.to_numpy(),
-    }), x="Offene Assessments", y="Kurseinträge")
-    st.caption(
-        "Gezählt werden bis zum gewählten Tag fällige Assessments ohne "
-        "erfasste eigene oder angerechnete Erfüllung."
-    )
-
-    if not ausgewaehlt.empty:
-        st.markdown("#### Einen Hinweis genauer ansehen")
-        positionen = list(range(len(ausgewaehlt)))
-        person = st.selectbox(
-            "Kurseintrag",
-            positionen,
-            format_func=lambda i: (
-                f"ID {ausgewaehlt.iloc[i]['id_student']} · "
-                f"{ausgewaehlt.iloc[i]['hinweisstufe']}"
+        displayed,
+        hide_index=True, width="stretch",
+        column_config={
+            "course": st.column_config.TextColumn(tr(language, "col_course")),
+            "entries": st.column_config.NumberColumn(tr(language, "col_entries")),
+            "alerts": st.column_config.NumberColumn(
+                tr(language, "col_review"), help=tr(language, "col_review_help")
             ),
-        )
-        eintrag = ausgewaehlt.iloc[person]
-        st.caption(
-            "Dies sind beobachtete Daten bis zum ausgewählten Tag. "
-            "Sie erklären nicht kausal, warum das Modell den Hinweis vergibt."
-        )
-        beobachtungen = []
-        offen = int(eintrag["assessments_fehlend"])
-        if offen:
-            beobachtungen.append(
-                f"{offen} fällige Assessments ohne erfasste Erfüllung."
+            "first": st.column_config.NumberColumn(tr(language, "col_first")),
+            "repeated": st.column_config.NumberColumn(tr(language, "col_repeat")),
+            "due": st.column_config.NumberColumn(
+                tr(language, "col_due"), help=tr(language, "col_due_help")
+            ),
+        },
+    )
+    chosen = st.selectbox(tr(language, "course_choose"), course_names)
+    st.button(
+        tr(language, "open_list"), type="primary",
+        on_click=open_course, args=(chosen,),
+    )
+
+    # Die tabellarische Historie zählt Hinweise je Woche, nicht Kontakte.
+    if len(days) > 1:
+        with st.expander(tr(language, "trend_open")):
+            trend = (
+                data.assign(
+                    first=data["hinweisstatus"].eq("Erstmals im Upload"),
+                    repeated=data["hinweisstatus"].eq("Wiederholt im Upload"),
+                )
+                .groupby("stichtag", as_index=False)
+                .agg(first=("first", "sum"), repeated=("repeated", "sum"))
+                .rename(columns={
+                    "stichtag": tr(language, "day_label"),
+                    "first": tr(language, "col_first"),
+                    "repeated": tr(language, "col_repeat"),
+                })
             )
-        if eintrag["klicks_letzte_7_tage"] == 0:
-            beobachtungen.append("Keine erfassten VLE-Klicks in den letzten sieben Tagen.")
-        elif eintrag["klicks_letzte_7_tage"] < kurs["klicks_letzte_7_tage"].median():
-            beobachtungen.append(
-                "Weniger VLE-Klicks in den letzten sieben Tagen "
-                "als der Median dieses Kursdurchlaufs."
+            st.write(tr(language, "trend_intro"))
+            st.dataframe(
+                trend, hide_index=True, width="stretch",
+                column_config={
+                    tr(language, "day_label"): st.column_config.NumberColumn(
+                        tr(language, "trend_day"), format="%d"
+                    ),
+                    tr(language, "col_first"): st.column_config.NumberColumn(
+                        tr(language, "col_first"), help=tr(language, "col_first_help")
+                    ),
+                    tr(language, "col_repeat"): st.column_config.NumberColumn(
+                        tr(language, "col_repeat"), help=tr(language, "col_repeat_help")
+                    ),
+                },
             )
-        if not beobachtungen:
-            beobachtungen.append(
-                "Keines dieser einfachen Einzelmerkmale fällt auf; "
-                "der Modellhinweis beruht auf der Kombination der Eingaben."
-            )
-        for beobachtung in beobachtungen:
-            st.write("• " + beobachtung)
-        st.caption(
-            "Nächster Schritt: Angaben und Unterstützungsbedarf persönlich prüfen. "
-            "Der Hinweis allein begründet keine negative Entscheidung."
+            st.caption(tr(language, "trend_caption"))
+
+elif view == "course":
+    st.subheader(tr(language, "course_title"))
+    focus = st.session_state.get("course_focus", course_names[0])
+    course_name = st.selectbox(
+        tr(language, "course_label"), course_names,
+        index=course_names.index(focus) if focus in course_names else 0,
+    )
+    st.session_state["course_focus"] = course_name
+    info = overview.loc[overview["course"].eq(course_name)].iloc[0]
+    course = week.loc[
+        week["code_module"].eq(info["code_module"])
+        & week["code_presentation"].eq(info["code_presentation"])
+    ].sort_values("modellwert", ascending=False, kind="stable")
+    profile = course_profile(
+        language, str(info["code_module"]), str(info["code_presentation"])
+    )
+    if profile:
+        st.caption(profile)
+        st.button(CONTEXT[language]["course_about_button"], on_click=open_context)
+    st.caption(tr(language, "course_caution"))
+
+    # Angezeigt werden echte Personenzahlen; 10/20 Prozent sind nur die Quote.
+    count_short = int(course["hinweisstufe"].eq("Hohe Priorität").sum())
+    count_extended = int(course["hinweisstufe"].ne("Kein Hinweis").sum())
+    options = ["extended", "short"]
+    def scope_label(value: str) -> str:
+        """Beschriftet die Auswahl mit der konkreten Kursgröße."""
+        return tr(
+            language, "scope_more" if value == "extended" else "scope_less",
+            n=count_extended if value == "extended" else count_short,
+            total=len(course),
         )
 
-        person_verlauf = daten.loc[
-            daten["code_module"].eq(modul)
-            & daten["code_presentation"].eq(praesentation)
-            & daten["id_student"].eq(eintrag["id_student"])
-            & daten["stichtag"].le(stichtag)
-        ].sort_values("stichtag")
-        if len(person_verlauf) > 1:
-            st.markdown("**Erfasste Klicks dieser Person in den letzten sieben Tagen je Stichtag**")
-            st.line_chart(person_verlauf, x="stichtag", y="klicks_letzte_7_tage")
-            st.caption("Klicks messen Plattformnutzung, nicht Lernzeit oder Verständnis.")
-
-with tab_verlauf:
-    st.subheader("Verlauf der hochgeladenen Kurswochen")
-    st.caption(
-        "Ein wiederholter Hinweis ist eine erneute Anzeige desselben "
-        "Kurseintrags. Er bedeutet nicht automatisch, dass erneut Kontakt nötig ist."
+    scope = st.radio(
+        tr(language, "scope_label"), options,
+        format_func=scope_label, help=tr(language, "scope_help"),
     )
-    verlauf = (
-        daten.assign(
-            neuer_hinweis=daten["hinweisstatus"].eq("Erstmals im Upload"),
-            wiederholung=daten["hinweisstatus"].eq("Wiederholt im Upload"),
-        )
-        .groupby("stichtag", as_index=False)
-        .agg(
-            kurseintraege=("id_student", "size"),
-            neue_hinweise=("neuer_hinweis", "sum"),
-            wiederholte_hinweise=("wiederholung", "sum"),
-        )
-    )
-    if len(verlauf) > 1:
-        st.line_chart(verlauf, x="stichtag", y="kurseintraege")
-        st.caption("Kurseinträge, die am jeweiligen Kurstag im Upload enthalten sind.")
-        st.bar_chart(verlauf, x="stichtag", y=["neue_hinweise", "wiederholte_hinweise"])
-        st.caption(
-            "Die Hinweise sind je Kursdurchlauf auf 20 % begrenzt. "
-            "‚Neu‘ gilt nur relativ zu den hochgeladenen Wochen."
-        )
+    st.info(tr(
+        language, "scope_caption", n=(count_short if scope == "short" else count_extended),
+        total=len(course), remaining=len(course) - (count_short if scope == "short" else count_extended),
+    ))
+    with st.expander(tr(language, "scope_evidence_title")):
+        st.write(tr(language, "scope_evidence"))
+    if scope == "short":
+        review = course.loc[course["hinweisstufe"].eq("Hohe Priorität")].copy()
+        review["hinweisstatus"] = review["hinweisstatus_10"]
     else:
-        st.info("Für einen zeitlichen Verlauf bitte mehrere Kurswochen hochladen.")
-    st.dataframe(
-        verlauf.rename(columns={
-            "stichtag": "Kurstag",
-            "kurseintraege": "Kurseinträge",
-            "neue_hinweise": "Erstmals im Upload",
-            "wiederholte_hinweise": "Wiederholt im Upload",
-        }),
-        hide_index=True,
+        review = course.loc[course["hinweisstufe"].ne("Kein Hinweis")].copy()
+
+    chosen_filter = "all"
+    if history_known:
+        chosen_filter = st.radio(
+            tr(language, "filter_label"), ["all", "first", "repeat"],
+            format_func=lambda value: tr(language, "filter_" + value),
+            horizontal=True, help=tr(language, "gloss_first"),
+        )
+        if chosen_filter != "all":
+            status = (
+                "Erstmals im Upload" if chosen_filter == "first"
+                else "Wiederholt im Upload"
+            )
+            review = review.loc[review["hinweisstatus"].eq(status)].copy()
+
+    st.write(tr(language, "list_summary", n=len(review), total=len(course)))
+    # Bericht und Oberfläche verwenden exakt dieselben bereits gefilterten Zeilen.
+    st.download_button(
+        tr(language, "report_button"),
+        data=course_report(
+            course, review, day=day, name=course_name,
+            scope=scope_label(scope),
+            selection=tr(language, "filter_" + chosen_filter),
+            language=language,
+        ),
+        file_name=tr(language, "report_file", day=day, course=course_name.replace(" ", "_")),
+        mime="text/html",
+        help=tr(language, "report_help"),
+    )
+    if review.empty:
+        st.info(tr(language, "list_empty"))
+    else:
+        displayed = review[
+            ["id_student", "hinweisstufe", "hinweisstatus",
+             "assessments_fehlend", "klicks_letzte_7_tage"]
+        ].copy()
+        displayed["hinweisstufe"] = displayed["hinweisstufe"].map(
+            lambda value: local_group(language, value)
+        )
+        displayed["hinweisstatus"] = displayed["hinweisstatus"].map(
+            lambda value: local_status(language, value)
+        )
+        st.dataframe(
+            displayed, hide_index=True, width="stretch",
+            column_config={
+                "id_student": st.column_config.NumberColumn(
+                    tr(language, "col_id"), help=tr(language, "col_id_help"), format="%d"
+                ),
+                "hinweisstufe": st.column_config.TextColumn(
+                    tr(language, "col_group"), help=tr(language, "col_group_help")
+                ),
+                "hinweisstatus": st.column_config.TextColumn(
+                    tr(language, "col_status"), help=tr(language, "col_status_help")
+                ),
+                "assessments_fehlend": st.column_config.NumberColumn(
+                    tr(language, "col_missing"), help=tr(language, "col_due_help")
+                ),
+                "klicks_letzte_7_tage": st.column_config.NumberColumn(
+                    tr(language, "col_clicks"), help=tr(language, "col_clicks_help")
+                ),
+            },
+        )
+        selected = st.selectbox(
+            tr(language, "person_choose"), range(len(review)),
+            format_func=lambda index: f"ID {review.iloc[index]['id_student']}",
+        )
+        entry = review.iloc[selected]
+        st.markdown(tr(language, "detail_title", id=entry["id_student"], day=day))
+        observations = []
+        questions = []
+        due = int(entry["assessments_fehlend"])
+        if due:
+            observations.append(tr(language, "due_observation", n=due))
+            questions.append(tr(language, "due_question"))
+        clicks = int(entry["klicks_letzte_7_tage"])
+        median = course["klicks_letzte_7_tage"].median()
+        if clicks == 0:
+            observations.append(tr(language, "zero_observation"))
+            questions.append(tr(language, "zero_question"))
+        elif clicks < median:
+            observations.append(tr(language, "low_observation"))
+        if not observations:
+            observations.append(tr(language, "no_observation"))
+        for observation in observations:
+            st.write("• " + observation)
+        st.markdown(f"**{tr(language, 'conversation')}**")
+        for question in questions:
+            st.write("• " + question)
+        st.write("• " + tr(language, "general_question"))
+        st.caption(tr(language, "detail_limit"))
+        st.markdown(f"**{tr(language, 'next_step_title')}**")
+        if due:
+            st.info(tr(language, "next_step_due"))
+        if history_known and entry["hinweisstatus"] == "Wiederholt im Upload":
+            st.info(tr(language, "next_step_repeat"))
+        elif not due:
+            st.info(tr(language, "next_step_first"))
+        st.caption(tr(language, "next_step_shared"))
+        st.caption(tr(language, "next_step_record"))
+        with st.expander(tr(language, "draft_title")):
+            st.write(tr(language, "draft_label"))
+            st.code(tr(language, "draft_text"), language=None)
+            st.caption(tr(language, "draft_limit"))
+
+    # Kein zweites Klickdiagramm für dieselbe Person: Werte stehen in der Liste.
+    st.caption(tr(language, "contact_limit"))
+
+elif view == "manager":
+    st.subheader(tr(language, "manager_title"))
+    st.write(tr(language, "manager_intro"))
+    manager_scope = st.radio(
+        tr(language, "manager_scope"), ["short", "extended"],
+        index=1, horizontal=True,
+        format_func=lambda value: tr(language, "manager_" + value),
+        help=tr(language, "manager_scope_help"),
     )
 
-with tab_hilfe:
-    st.subheader("Was bedeuten die Angaben?")
-    st.markdown(
-        "- **VLE (Virtual Learning Environment):** die virtuelle Lernumgebung. "
-        "Klicks zeigen nur erfasste Interaktionen.\n"
-        "- **Assessment:** eine im Kurs vorgesehene bewertete Leistung. "
-        "‚Ohne erfasste Erfüllung‘ berücksichtigt eigene und angerechnete Abgaben.\n"
-        "- **Hohe Priorität:** oberste 10 % der Modellreihenfolge je Kurs. "
-        "**Weitere Prüfung:** die nächsten 10 %.\n"
-        "- **Erstmals/Wiederholt:** nur anhand der im Upload vorhandenen Wochen."
+    with st.expander(tr(language, "manager_scenario"), expanded=True):
+        review_minutes = st.number_input(
+            tr(language, "manager_review_min"), min_value=0.0,
+            max_value=120.0, value=2.0, step=1.0,
+        )
+        email_inputs, call_inputs = st.columns(2)
+        with email_inputs:
+            email_percent = st.slider(
+                tr(language, "manager_email_pct"), 0, 100, 50, step=5,
+            )
+            email_minutes = st.number_input(
+                tr(language, "manager_email_min"), min_value=0.0,
+                max_value=120.0, value=4.0, step=1.0,
+            )
+        with call_inputs:
+            call_percent = st.slider(
+                tr(language, "manager_call_pct"), 0, 100, 10, step=5,
+            )
+            call_minutes = st.number_input(
+                tr(language, "manager_call_min"), min_value=0.0,
+                max_value=180.0, value=20.0, step=5.0,
+            )
+        hours_per_coach = st.number_input(
+            tr(language, "manager_hours_coach"), min_value=0.5,
+            max_value=60.0, value=8.0, step=0.5,
+        )
+        st.caption(tr(language, "manager_assumptions"))
+
+    workload, history_available = course_workload(
+        data, day, manager_scope,
+        review_minutes=review_minutes,
+        email_percent=email_percent,
+        email_minutes=email_minutes,
+        call_percent=call_percent,
+        call_minutes=call_minutes,
     )
-    st.markdown("**Grenzen des Prototyps**")
-    st.write(
-        "Die Modelle wurden mit historischen OULAD-Kursen trainiert. "
-        "2014J dient als explorative zeitliche Prüfung und Demo. "
-        "Das gemeinsame Modellziel lautet Abbruch oder Nichtbestehen; "
-        "die Art eines individuellen Risikos und die Wirkung von Unterstützung "
-        "werden damit nicht bestimmt. Ein Einsatz in anderen Bildungskontexten "
-        "erfordert eine neue Daten- und Güteprüfung."
+    selected_total = int(workload["selected"].sum())
+    hours_total = float(workload["workload_hours"].sum())
+    coach_capacity = math.ceil(hours_total / hours_per_coach)
+    a, b, c, d = st.columns(4)
+    a.metric(tr(language, "manager_selected"), selected_total)
+    if history_available:
+        b.metric(tr(language, "manager_first"), int(workload["first"].sum()))
+    else:
+        b.metric(tr(language, "manager_first_unknown"), "—")
+    c.metric(tr(language, "manager_hours"), f"{hours_total:.1f} h")
+    d.metric(
+        tr(language, "manager_coaches"), coach_capacity,
+        help=tr(language, "manager_coaches_help"),
     )
+    st.caption(tr(language, "manager_history" if history_available else "manager_history_missing"))
+
+    st.markdown(f"**{tr(language, 'manager_chart')}**")
+    st.bar_chart(
+        workload.set_index("course")["workload_hours"].rename(
+            tr(language, "manager_course_hours")
+        ),
+    )
+    st.markdown(f"**{tr(language, 'manager_table')}**")
+    columns = [
+        "course", "entries", "selected", "due_work",
+        "planned_emails", "planned_calls", "workload_hours",
+    ]
+    if history_available:
+        columns[3:3] = ["first", "repeated"]
+    shown = workload[columns].copy()
+    shown["workload_hours"] = shown["workload_hours"].round(1)
+    labels = {
+        "course": "manager_course",
+        "entries": "manager_entries",
+        "selected": "manager_hints",
+        "first": "manager_new",
+        "repeated": "manager_repeat",
+        "due_work": "manager_due",
+        "planned_emails": "manager_emails",
+        "planned_calls": "manager_calls",
+        "workload_hours": "manager_course_hours",
+    }
+    st.dataframe(
+        shown.rename(columns={name: tr(language, labels[name]) for name in columns}),
+        hide_index=True, width="stretch",
+    )
+    with st.expander(tr(language, "manager_method")):
+        st.write(tr(language, "manager_formula"))
+    st.caption(tr(language, "manager_limits"))
+    st.caption(tr(language, "manager_no_roles"))
+
+else:
+    render_project_context(language)
