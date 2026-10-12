@@ -88,8 +88,14 @@ display(tabelle)
    individuelle Prüfliste gehört nicht in einen Gruppenraum.
 5. **Dokumentation:** Tatsächlich erfolgte Kontakte, Antworten und weitere
    Schritte müssen in einem geschützten Betreuungssystem dokumentiert werden.
-   Die aktuelle App hat weder Kontaktdaten noch einen dauerhaften
-   Bearbeitungsstand oder getrennte Zugriffsrechte.
+   Der Beispielstatus der App gilt nur in der Browser-Sitzung; er ist kein
+   dauerhafter Nachweis und die getrennten Einstiege sind keine Zugriffsrechte.
+
+Die optionale Ansicht **„Jetzt prüfen“** bündelt vorrangige Einträge mit
+Beispielstatus „noch nicht gesichtet“ und am gewählten Kurstag fällige
+Beispiel-Wiedervorlagen. Sie blendet die übrigen Personen nur vorübergehend
+aus; die vollständige Kursliste und der vollständige Bericht bleiben erhalten.
+Sie ist eine Bedienungshilfe, kein aus dem Datensatz ermittelter Kontaktplan.
 
 Für einen Schwellenwert „ab hier anrufen, darunter mailen“ gibt es für
 dieses OULAD-Modell **keine validierte Grundlage**. Eine kleine randomisierte
@@ -105,10 +111,27 @@ Abbruchquote nicht senkt
 Die Reihenfolge oben ist daher ein Arbeitsentwurf für einen Pilotversuch,
 keine belegte Therapie- oder Kontaktregel.
 
+Eine **zusätzliche Arbeitshypothese** ist ein gestufter Ablauf: etwa ab der
+zweiten Kurswoche ein neutrales, optionales Hilfsangebot und später bei
+anhaltendem Bedarf persönliche Sichtung durch einen Coach. Das könnte Zeit
+sparen; es könnte aber auch zusätzliche Rückfragen erzeugen. Die Annahme,
+dass sehr frühe Abmeldungen nicht mehr beeinflussbar seien, ist ebenfalls
+ungeprüft. Ein dringender Anlass dürfte nicht pauschal bis Woche vier
+warten. Vor einer Regel wären die Verteilung der Abmeldetage, der zeitliche
+Vorlauf der Modellhinweise und im Pilot die tatsächlichen Kontakte, Antworten,
+Arbeitszeiten und Ergebnisse zu prüfen. OULAD allein misst keine
+Interventionswirkung. **Die Demo verschickt keine automatischen Nachrichten.**
+
 ## Was die Leitungsansicht rechnet
 
-Pro Kurs und gewähltem Kurstag zählen die 10-%- oder 20-%-Listen
-Kurseinträge. Die Leitung wählt Minuten je Sichtung, die geplanten Anteile
+Diese Ansicht bleibt ein **vorläufiges Konzept**. Ein Leitungsprodukt mit
+gemessenen Prozess- und Ergebniskennzahlen wäre ein separates Folgeprojekt.
+
+Pro Kurs und gewähltem Kurstag kann die Leitung den ersten Rangbereich
+(oberste rund 10 %), die beiden vorrangigen Bereiche zusammen (oberste rund
+20 %) oder alle angemeldeten Kurseinträge für ein **Planungsszenario** wählen.
+In der Coach-Ansicht bleiben unabhängig davon alle Personen sichtbar.
+Die Leitung wählt Minuten je Sichtung, die geplanten Anteile
 für Nachricht und Gespräch, deren Dauer und die je Coach dafür verfügbaren
 Wochenstunden. Nachricht und Gespräch können dieselbe Person betreffen.
 Die Anzahl geplanter Kontakte wird **je Kurs** auf ganze Personen
@@ -123,6 +146,9 @@ angegebenen freien Stunden je Coach und aufgerundet. Die 20-%-Auswahl
 an Tag 27 hatte historisch 1.567 Einträge; schon zwei Minuten Sichtung
 je Eintrag wären rund 52 Stunden. Geplante Nachrichten, Gespräche und
 Rückfragen erhöhen die Zeit. Die Kennzahl ist ein **Szenario**, kein
-gemessener Personalbedarf. Die App kennt weder tatsächliche Antworten
-noch verhinderte Abbrüche; ein realistischer Pilot müsste Aufwand und
-Nutzen im jeweiligen Weiterbildungskontext gesondert messen.
+gemessener Personalbedarf. Bei Planung für alle wird keine triviale
+„erstmals/früher“-Listenhistorie gezeigt. Die App kennt weder tatsächliche
+Antworten noch verhinderte Abbrüche; getrennte spätere Abbruch- und
+Nichtbestehensquoten fehlen in der hochgeladenen Demo-CSV. Ein realistischer
+Pilot müsste Aufwand und Nutzen im jeweiligen Weiterbildungskontext
+gesondert messen.

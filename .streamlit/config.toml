@@ -1,6 +1,7 @@
 # Die Person kann über das Streamlit-Menü zwischen hell und dunkel wechseln.
 [theme]
 base = "light"
+baseFontSize = 18
 
 [theme.light]
 primaryColor = "#9B4933"

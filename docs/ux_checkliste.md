@@ -6,17 +6,19 @@ Diese Punkte nacheinander in der laufenden App prüfen. Hake sie erst ab, wenn d
 
 - [ ] Die App zeigt vor dem Upload keine Kursgrafiken oder Hinweise.
 - [ ] Logo und Titel, Sprache, Hilfe und Fehlerbericht sind sichtbar; die obere Menüleiste verdeckt nichts.
-- [ ] Die Vorführ-CSV kann heruntergeladen und wieder hochgeladen werden.
+- [ ] In einem frischen Klon lässt sich die synthetische Testdatei herunterladen und hochladen; mit lokal vorhandener OULAD-2014J-Datei erscheint stattdessen deren Download.
+- [ ] Die synthetische Datei wird nach dem Upload als reiner Bedienungstest gekennzeichnet; die fachliche Vorführung verwendet die OULAD-2014J-Datei.
 - [ ] Eine ungeeignete CSV erzeugt eine verständliche Fehlermeldung.
 - [ ] Schon vor einem Upload zeigt **Hilfe & Hintergrund → Über die Demo** Datenherkunft, Modultabelle, Modellweg und Grenzen.
 
 ## Wöchentliche Sichtung
 
 - [ ] Der angezeigte Kurstag ist erkennbar; der jüngste hochgeladene Tag ist voreingestellt.
-- [ ] Die Navigation 🗓️ Diese Woche / 👥 Kurs prüfen / 📊 Leitung & Kapazität / 📚 Über das Projekt funktioniert mit Maus und Tastatur.
-- [ ] Ich kann in eigenen Worten erklären, dass „neu auf Liste“ einen ersten Hinweis **in den hochgeladenen Wochen** meint, nicht einen ersten Kontakt.
+- [ ] Die Bereichswahl führt getrennt zu Coach, Leitung und Projekthintergrund; innerhalb der Coach-Ansicht gibt es keine Leitungsregisterkarte.
+- [ ] Die Navigation Diese Woche / Kurs prüfen sowie der Wechsel zurück zur Bereichswahl funktionieren mit Maus und Tastatur.
+- [ ] Ich kann in eigenen Worten erklären, dass „neu in vorrangiger Sichtung“ einen ersten Hinweis **in den hochgeladenen Wochen** meint, nicht einen ersten Kontakt.
 - [ ] Die optionale Wochentabelle enthält verständliche Spalten und erklärt, dass dieselbe Person in mehreren Wochen auftauchen kann.
-- [ ] Nach „Prüfliste öffnen“ stimmt der ausgewählte Kurs mit dem angezeigten Kurs überein.
+- [ ] Ein Klick auf eine Kurszeile oder die oben sichtbare Kurswahl öffnet den richtigen Kurs; BBB ist ohne Hinweis auffindbar.
 - [ ] Im Kursbereich stimmen Fachbereich und gegebenenfalls 2014J-Dauer mit der Projekttabelle überein; „Mehr über die OULAD-Kurse“ führt zum Hintergrund.
 
 ## Projektwissen und Grenzen
@@ -30,25 +32,30 @@ Diese Punkte nacheinander in der laufenden App prüfen. Hake sie erst ab, wenn d
 
 ## Personen und Betreuung
 
-- [ ] Die kurze und die erweiterte Liste zeigen die tatsächliche Anzahl im Kurs; ich verstehe 10/20 % als Zahl der zu prüfenden Personen, nicht als individuelle Wahrscheinlichkeit.
-- [ ] Mir ist klar, dass eine Person außerhalb der Liste trotzdem später abbrechen oder nicht bestehen kann.
+- [ ] Alle Personen des Kurses sind in Modellreihenfolge sichtbar, mit Rangnummer, Text und Farbe für die drei relativen Sichtungsgruppen.
+- [ ] Ein Klick auf eine Personenzeile öffnet genau diese ID; die Auswahl per Dropdown funktioniert ebenfalls. Nach einem Wechsel von Kurstag, Kurs oder Filter bleibt keine veraltete Auswahl hängen.
+- [ ] „Jetzt prüfen“ enthält nur vorrangige Einträge mit Beispielstatus „noch nicht gesichtet“ und an diesem Kurstag fällige Beispiel-Wiedervorlagen, auch wenn deren Rang derzeit nachrangig ist.
+- [ ] Antwort ausstehend, Gespräch, abgeschlossener Eintrag und eine erst später fällige Wiedervorlage tauchen nicht als aktuell fällig auf; die Ansicht „Alle im Kurs“ ist jederzeit verfügbar.
+- [ ] Mir ist klar, dass auch weiter unten spätere Abbrüche oder Nichtbestehen vorkommen können und die Gruppen keine validierten Risikoschwellen sind.
 - [ ] Ich kann einzelne Personen und ihre beobachteten Merkmale ansehen, ohne diese Merkmale als erwiesene Ursache zu missverstehen.
 - [ ] Der neutrale Nachrichtentext ist als Entwurf erkennbar und wird nicht automatisch versendet.
-- [ ] Der Kursbericht passt zu Kurstag, Kurs, Listenumfang und Filter.
+- [ ] Der Beispielstatus und die Wiedervorlage sind als Sitzungssimulation erkennbar und erscheinen in Liste und Bericht; echte Kontakte werden nicht behauptet.
+- [ ] Der Kursbericht passt zu Kurstag, Kurs und vollständiger Rangliste, auch bei aktivem Filter „Jetzt prüfen“.
 - [ ] Der Kontaktvorschlag unterscheidet offene Leistungen und frühere Listenhinweise; er löst keine Nachricht aus.
 
 ## Leitung und Kapazität
 
 - [ ] Die Leitungsansicht zeigt Summen je Kurs und keine Lernenden-IDs.
-- [ ] Kürzere und erweiterte Liste ändern Eintragszahl und geschätzte Stunden nachvollziehbar.
+- [ ] Erste Prioritätsgruppe, beide vorrangigen Gruppen und die ganze Kursgruppe ändern Eintragszahl und geschätzte Stunden nachvollziehbar.
 - [ ] Null Prozent geplante Nachrichten und Gespräche lässt nur die Sichtungszeit übrig.
-- [ ] „Erstmals in Datei“ zählt bei der kurzen Liste nur frühere Zugehörigkeit zu dieser kurzen Liste.
+- [ ] „Erstmals vorrangig“ zählt bei der ersten Gruppe nur frühere Zugehörigkeit zu dieser Gruppe; bei der ganzen Kursgruppe wird keine triviale Listenhistorie angezeigt.
 - [ ] Eine CSV mit nur Tag 27 erzeugt keine vermeintlich „erstmaligen“ Hinweise.
 - [ ] Coach-Kapazitäten sind als Szenario erkennbar, nicht als tatsächliche Kontakte oder gemessener Personalbedarf.
+- [ ] Der Leitungsbereich ist als vorläufiges Konzept und mögliches separates Folgeprojekt benannt.
 
 ## Lesbarkeit und Bedienung
 
-- [ ] „Prüfliste öffnen“ und alle anderen Buttons sind in Hell- und Dunkelmodus gut lesbar.
+- [ ] „Kurs öffnen“, die Zeilenauswahl und alle anderen Buttons sind in Hell- und Dunkelmodus gut lesbar.
 - [ ] Bei 200 % Browser-Zoom bleiben Sprachwahl, Navigation, Prüfliste und Dialoge bedienbar.
 - [ ] Die wichtigsten Schritte sind mit Tastatur erreichbar und eine Testperson versteht Beschriftungen und Hilfe.
 - [ ] Wenn verfügbar: Screenreader liest Navigation, Tabellenspalten und Hilfetexte verständlich vor.

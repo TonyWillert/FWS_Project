@@ -22,11 +22,11 @@ def course_workload(
 ) -> tuple[pd.DataFrame, bool]:
     """Plant Aufwand je Kurs; die Kontaktanteile sind Annahmen, keine Prognosen.
 
-    Eine Person zählt am gewählten Tag und im gewählten Kurs nur einmal. Bei
-    einer kurzen Liste wird auch ihre frühere Listenzugehörigkeit anhand der
-    kurzen Listen berechnet, nicht anhand der bisherigen 20-%-Markierung.
+    Eine Person zählt am gewählten Tag und im gewählten Kurs nur einmal.
+    "all" plant die ganze Kursgruppe; Listenhistorie gilt nur für die
+    beiden vorrangigen Sichtungsstufen.
     """
-    if scope not in ("short", "extended"):
+    if scope not in ("short", "extended", "all"):
         raise ValueError("Unbekannter Listenumfang")
     if any(value < 0 for value in (review_minutes, email_minutes, call_minutes)):
         raise ValueError("Minuten dürfen nicht negativ sein")
@@ -42,11 +42,13 @@ def course_workload(
     def chosen(frame: pd.DataFrame) -> pd.DataFrame:
         if scope == "short":
             return frame.loc[frame["hinweisstufe"].eq("Hohe Priorität")]
-        return frame.loc[frame["hinweisstufe"].ne("Kein Hinweis")]
+        if scope == "extended":
+            return frame.loc[frame["hinweisstufe"].ne("Kein Hinweis")]
+        return frame
 
     selected = chosen(week).copy()
     previous = data.loc[data["stichtag"].lt(day)]
-    history_known = day == 6 or not previous.empty
+    history_known = scope != "all" and (day == 6 or not previous.empty)
     if history_known:
         prior_keys = pd.MultiIndex.from_frame(chosen(previous)[SCHLUESSEL])
         current_keys = pd.MultiIndex.from_frame(selected[SCHLUESSEL])

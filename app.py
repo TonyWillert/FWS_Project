@@ -1,11 +1,14 @@
 """LearnerCue: wöchentliche fachliche Sichtung historischer OULAD-Kurse."""
 
+import hashlib
 import logging
 import math
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
+from coach_workflow import next_step_reason
 from operations import course_workload
 from project_context import (
     CONTEXT, DATASET_URL, PAPER_URL, course_profile, file_overview, module_overview,
@@ -26,14 +29,19 @@ PROJEKTORDNER = Path(__file__).resolve().parent
 MODELLORDNER = PROJEKTORDNER / "models" / "oulad_wochen"
 SCHEMADATEI = MODELLORDNER / "schema.json"
 DEMODATEI = PROJEKTORDNER / "data" / "demo" / "oulad_wochen_2014j.csv"
+UI_BEISPIEL = PROJEKTORDNER / "examples" / "learnercue_ui_sample.csv"
 LOGO = PROJEKTORDNER / "assets" / "learnercue.svg"
 
 st.set_page_config(
     page_title="LearnerCue | Course review", page_icon=str(LOGO), layout="wide"
 )
-# Abstand zur festen Streamlit-Leiste: Bedienelemente beginnen darunter.
+# Größere Grundschrift und klare Klickflächen nach dem ersten Verständlichkeitstest.
 st.markdown(
-    "<style>.block-container {max-width: 1180px; padding-top: 5rem}</style>",
+    """<style>
+    .block-container {max-width: 1280px; padding-top: 5rem}
+    .stApp p, .stApp label {font-size: 1.06rem; line-height: 1.55}
+    .stApp button {min-height: 2.7rem}
+    </style>""",
     unsafe_allow_html=True,
 )
 
@@ -172,6 +180,14 @@ with st.expander(
             file_name=DEMODATEI.name,
             mime="text/csv",
         )
+    elif UI_BEISPIEL.exists():
+        st.download_button(
+            tr(language, "sample_download"),
+            data=UI_BEISPIEL.read_bytes(),
+            file_name=UI_BEISPIEL.name,
+            mime="text/csv",
+        )
+        st.caption(tr(language, "sample_limit"))
     upload = st.file_uploader(
         tr(language, "upload_label"), type="csv", key="wochen_csv",
         help=tr(language, "upload_help"),
@@ -181,6 +197,10 @@ with st.expander(
 if upload is None:
     st.info(tr(language, "no_upload"))
     st.stop()
+
+synthetic_upload = UI_BEISPIEL.exists() and upload.getvalue() == UI_BEISPIEL.read_bytes()
+if synthetic_upload:
+    st.warning(tr(language, "sample_limit"))
 
 try:
     schema = lade_schema(MODELLORDNER)
@@ -272,28 +292,76 @@ overview = (
     )
 )
 overview["course"] = overview["code_module"] + " " + overview["code_presentation"]
-overview = overview.sort_values(
-    ["first", "alerts", "course"], ascending=[False, False, True]
-)
+overview = overview.sort_values("course")
 course_names = overview["course"].tolist()
+
+
+def choose_area(area: str):
+    """Wechselt zwischen den getrennten Einstiegen der Demo."""
+    st.session_state["area_v3"] = area
+
+
+def choose_coach_view(name: str):
+    st.session_state["coach_view_v3"] = name
 
 
 def open_course(name: str):
     """Öffnet nach einem Klick die Prüfliste des gewählten Kursdurchlaufs."""
     st.session_state["course_focus"] = name
-    st.session_state["view_v2"] = "course"
+    st.session_state["course_select_v3"] = name
+    st.session_state["area_v3"] = "coach"
+    st.session_state["coach_view_v3"] = "course"
 
 
 def open_context():
     """Öffnet die belegten Hintergrundinfos zu Modulen und Demo."""
-    st.session_state["view_v2"] = "background"
+    st.session_state["area_v3"] = "background"
 
 
-view = st.radio(
-    tr(language, "nav"), ["week", "course", "manager", "background"],
-    format_func=lambda value: tr(language, "nav_" + value),
-    horizontal=True, key="view_v2",
+area = st.session_state.get("area_v3", "home")
+if area not in ("home", "coach", "manager", "background"):
+    area = "home"
+
+if area == "home":
+    st.header(tr(language, "area_title"))
+    st.write(tr(language, "area_intro"))
+    coach_card, manager_card = st.columns(2, gap="large")
+    with coach_card, st.container(border=True):
+        st.subheader(tr(language, "area_coach_title"))
+        st.write(tr(language, "area_coach_desc"))
+        st.button(
+            tr(language, "area_coach_button"), type="primary",
+            use_container_width=True, on_click=choose_area, args=("coach",),
+        )
+    with manager_card, st.container(border=True):
+        st.subheader(tr(language, "area_manager_title"))
+        st.write(tr(language, "area_manager_desc"))
+        st.button(
+            tr(language, "area_manager_button"),
+            use_container_width=True, on_click=choose_area, args=("manager",),
+        )
+    st.button(tr(language, "nav_background"), on_click=open_context)
+    st.stop()
+
+heading, switch = st.columns([3, 1], vertical_alignment="center")
+heading.caption(tr(language, "area_current_" + area))
+switch.button(
+    tr(language, "area_switch"), use_container_width=True,
+    on_click=choose_area, args=("home",),
 )
+if area == "coach":
+    overview_nav, course_nav = st.columns(2)
+    overview_nav.button(
+        tr(language, "nav_week"), type="primary" if st.session_state.get("coach_view_v3", "week") == "week" else "secondary",
+        use_container_width=True, on_click=choose_coach_view, args=("week",),
+    )
+    course_nav.button(
+        tr(language, "nav_course"), type="primary" if st.session_state.get("coach_view_v3", "week") == "course" else "secondary",
+        use_container_width=True, on_click=choose_coach_view, args=("course",),
+    )
+    view = st.session_state.get("coach_view_v3", "week")
+else:
+    view = area
 
 if view == "week":
     st.subheader(tr(language, "nav_week"))
@@ -305,14 +373,25 @@ if view == "week":
         tr(language, "metric_hints"), int(overview["alerts"].sum()),
         help=tr(language, "metric_hints_help"),
     )
+    course_picker, course_button = st.columns([3, 1], vertical_alignment="bottom")
+    with course_picker:
+        chosen = st.selectbox(tr(language, "course_choose"), course_names)
+    with course_button:
+        st.button(
+            tr(language, "open_list"), type="primary", use_container_width=True,
+            on_click=open_course, args=(chosen,),
+        )
+    st.caption(tr(language, "course_row_hint"))
     displayed = overview[["course", "entries", "alerts", "due"]].copy()
     if history_known:
         displayed = overview[
             ["course", "entries", "alerts", "first", "repeated", "due"]
         ].copy()
-    st.dataframe(
+    event = st.dataframe(
         displayed,
         hide_index=True, width="stretch",
+        key=f"course_overview_{day}_{st.session_state.get('overview_epoch_v3', 0)}",
+        on_select="rerun", selection_mode="single-row",
         column_config={
             "course": st.column_config.TextColumn(tr(language, "col_course")),
             "entries": st.column_config.NumberColumn(tr(language, "col_entries")),
@@ -326,11 +405,11 @@ if view == "week":
             ),
         },
     )
-    chosen = st.selectbox(tr(language, "course_choose"), course_names)
-    st.button(
-        tr(language, "open_list"), type="primary",
-        on_click=open_course, args=(chosen,),
-    )
+    if event.selection.rows:
+        open_course(str(displayed.iloc[event.selection.rows[0]]["course"]))
+        # Eine alte Zeilenauswahl darf beim Zurückkehren nicht erneut öffnen.
+        st.session_state["overview_epoch_v3"] = st.session_state.get("overview_epoch_v3", 0) + 1
+        st.rerun()
 
     # Die tabellarische Historie zählt Hinweise je Woche, nicht Kontakte.
     if len(days) > 1:
@@ -367,10 +446,10 @@ if view == "week":
 
 elif view == "course":
     st.subheader(tr(language, "course_title"))
-    focus = st.session_state.get("course_focus", course_names[0])
+    if st.session_state.get("course_select_v3") not in course_names:
+        st.session_state["course_select_v3"] = course_names[0]
     course_name = st.selectbox(
-        tr(language, "course_label"), course_names,
-        index=course_names.index(focus) if focus in course_names else 0,
+        tr(language, "course_label"), course_names, key="course_select_v3",
     )
     st.session_state["course_focus"] = course_name
     info = overview.loc[overview["course"].eq(course_name)].iloc[0]
@@ -386,145 +465,204 @@ elif view == "course":
         st.button(CONTEXT[language]["course_about_button"], on_click=open_context)
     st.caption(tr(language, "course_caution"))
 
-    # Angezeigt werden echte Personenzahlen; 10/20 Prozent sind nur die Quote.
+    # Die ganze Kursgruppe bleibt sichtbar. Die bestehenden 10/20-%-Markierungen
+    # beschreiben nur relative Sichtungsstufen, keine validierte Risikoschwelle.
     count_short = int(course["hinweisstufe"].eq("Hohe Priorität").sum())
     count_extended = int(course["hinweisstufe"].ne("Kein Hinweis").sum())
-    options = ["extended", "short"]
-    def scope_label(value: str) -> str:
-        """Beschriftet die Auswahl mit der konkreten Kursgröße."""
-        return tr(
-            language, "scope_more" if value == "extended" else "scope_less",
-            n=count_extended if value == "extended" else count_short,
-            total=len(course),
-        )
-
-    scope = st.radio(
-        tr(language, "scope_label"), options,
-        format_func=scope_label, help=tr(language, "scope_help"),
-    )
-    st.info(tr(
-        language, "scope_caption", n=(count_short if scope == "short" else count_extended),
-        total=len(course), remaining=len(course) - (count_short if scope == "short" else count_extended),
-    ))
+    first_metric, next_metric, rest_metric = st.columns(3)
+    first_metric.metric(tr(language, "priority_first"), count_short)
+    next_metric.metric(tr(language, "priority_next"), count_extended - count_short)
+    rest_metric.metric(tr(language, "priority_rest"), len(course) - count_extended)
+    st.info(tr(language, "priority_explain"))
     with st.expander(tr(language, "scope_evidence_title")):
         st.write(tr(language, "scope_evidence"))
-    if scope == "short":
-        review = course.loc[course["hinweisstufe"].eq("Hohe Priorität")].copy()
-        review["hinweisstatus"] = review["hinweisstatus_10"]
-    else:
-        review = course.loc[course["hinweisstufe"].ne("Kein Hinweis")].copy()
 
-    chosen_filter = "all"
-    if history_known:
-        chosen_filter = st.radio(
-            tr(language, "filter_label"), ["all", "first", "repeat"],
-            format_func=lambda value: tr(language, "filter_" + value),
-            horizontal=True, help=tr(language, "gloss_first"),
+    review = course.copy().reset_index(drop=True)
+    review["rang"] = range(1, len(review) + 1)
+
+    def list_history(entry):
+        if entry["hinweisstufe"] != "Kein Hinweis":
+            return local_status(language, entry["hinweisstatus"])
+        if pd.notna(entry["ersthinweis_tag"]) and entry["ersthinweis_tag"] < day:
+            return tr(language, "status_prior")
+        return tr(language, "status_never")
+
+    review["listenverlauf"] = review.apply(list_history, axis=1)
+    file_key = hashlib.sha256(upload.getvalue()).hexdigest()[:16]
+    demo_states = st.session_state.setdefault("demo_contact_v3", {})
+
+    def entry_key(entry):
+        return (
+            f"{file_key}:{entry['code_module']}:"
+            f"{entry['code_presentation']}:{entry['id_student']}"
         )
-        if chosen_filter != "all":
-            status = (
-                "Erstmals im Upload" if chosen_filter == "first"
-                else "Wiederholt im Upload"
-            )
-            review = review.loc[review["hinweisstatus"].eq(status)].copy()
 
-    st.write(tr(language, "list_summary", n=len(review), total=len(course)))
-    # Bericht und Oberfläche verwenden exakt dieselben bereits gefilterten Zeilen.
+    def contact_label(entry):
+        record = demo_states.get(entry_key(entry), {"status": "open"})
+        if record["status"] == "followup":
+            due_day = record["day"]
+            key = "demo_due" if due_day <= day else "demo_followup_day"
+            return tr(language, key, day=due_day)
+        return tr(language, "demo_" + record["status"])
+
+    review["bearbeitungsstand"] = review.apply(contact_label, axis=1)
+    review["naechster_schritt"] = review.apply(
+        lambda entry: next_step_reason(
+            entry["hinweisstufe"], demo_states.get(entry_key(entry), {"status": "open"}), day
+        ), axis=1,
+    )
+    open_count = int(review["naechster_schritt"].eq("review").sum())
+    due_count = int(review["naechster_schritt"].eq("due").sum())
+    st.markdown(f"**{tr(language, 'worklist_title')}**")
+    st.caption(tr(language, "worklist_explain", open=open_count, due=due_count))
+    list_view = st.radio(
+        tr(language, "worklist_choose"), ["all", "next"],
+        format_func=lambda value: tr(language, "worklist_" + value),
+        horizontal=True, key=f"list_view_{file_key}_{course_name}_{day}",
+    )
+    visible = review if list_view == "all" else review.loc[review["naechster_schritt"].notna()]
+    st.write(tr(language, "list_summary", n=len(visible), total=len(review)))
+    # Bericht und Oberfläche verwenden exakt dieselbe vollständige Rangliste.
     st.download_button(
         tr(language, "report_button"),
         data=course_report(
             course, review, day=day, name=course_name,
-            scope=scope_label(scope),
-            selection=tr(language, "filter_" + chosen_filter),
-            language=language,
+            scope=tr(language, "scope_all"),
+            selection=tr(language, "filter_all"),
+            language=language, synthetic=synthetic_upload,
         ),
         file_name=tr(language, "report_file", day=day, course=course_name.replace(" ", "_")),
         mime="text/html",
         help=tr(language, "report_help"),
     )
-    if review.empty:
-        st.info(tr(language, "list_empty"))
-    else:
-        displayed = review[
-            ["id_student", "hinweisstufe", "hinweisstatus",
-             "assessments_fehlend", "klicks_letzte_7_tage"]
-        ].copy()
-        displayed["hinweisstufe"] = displayed["hinweisstufe"].map(
-            lambda value: local_group(language, value)
-        )
-        displayed["hinweisstatus"] = displayed["hinweisstatus"].map(
-            lambda value: local_status(language, value)
-        )
-        st.dataframe(
-            displayed, hide_index=True, width="stretch",
+    if list_view == "next":
+        st.caption(tr(language, "report_full"))
+    if visible.empty:
+        st.info(tr(language, "worklist_empty"))
+        st.stop()
+    displayed = visible[
+        ["rang", "id_student", "hinweisstufe", "listenverlauf",
+         "bearbeitungsstand", "assessments_fehlend"]
+    ].copy()
+    displayed["hinweisstufe"] = displayed["hinweisstufe"].map(
+        lambda value: local_group(language, value)
+    )
+    colors = {
+        tr(language, "group_high"): "background-color: #F5DDD4; color: #302620;",
+        tr(language, "group_more"): "background-color: #FAE9C8; color: #302920;",
+        tr(language, "group_remaining"): "background-color: #E9F1EC; color: #25332E;",
+    }
+    styled = displayed.style.apply(
+        lambda row: [colors[row["hinweisstufe"]]] * len(row), axis=1
+    )
+    person_options = visible.index.tolist()
+    person_key = f"person_select_v4_{file_key}_{course_name}_{day}_{list_view}"
+    if st.session_state.get(person_key) not in person_options:
+        st.session_state[person_key] = person_options[0]
+    event = st.dataframe(
+            styled, hide_index=True, width="stretch", row_height=38,
+            key=f"roster_{file_key}_{course_name}_{day}_{list_view}_{st.session_state.get('roster_epoch_v4', 0)}",
+            on_select="rerun", selection_mode="single-row",
             column_config={
+                "rang": st.column_config.NumberColumn(tr(language, "col_rank"), format="%d"),
                 "id_student": st.column_config.NumberColumn(
                     tr(language, "col_id"), help=tr(language, "col_id_help"), format="%d"
                 ),
                 "hinweisstufe": st.column_config.TextColumn(
                     tr(language, "col_group"), help=tr(language, "col_group_help")
                 ),
-                "hinweisstatus": st.column_config.TextColumn(
+                "listenverlauf": st.column_config.TextColumn(
                     tr(language, "col_status"), help=tr(language, "col_status_help")
+                ),
+                "bearbeitungsstand": st.column_config.TextColumn(
+                    tr(language, "col_demo_status"), help=tr(language, "demo_status_limit")
                 ),
                 "assessments_fehlend": st.column_config.NumberColumn(
                     tr(language, "col_missing"), help=tr(language, "col_due_help")
                 ),
-                "klicks_letzte_7_tage": st.column_config.NumberColumn(
-                    tr(language, "col_clicks"), help=tr(language, "col_clicks_help")
-                ),
             },
-        )
-        selected = st.selectbox(
-            tr(language, "person_choose"), range(len(review)),
-            format_func=lambda index: f"ID {review.iloc[index]['id_student']}",
-        )
-        entry = review.iloc[selected]
-        st.markdown(tr(language, "detail_title", id=entry["id_student"], day=day))
-        observations = []
-        questions = []
-        due = int(entry["assessments_fehlend"])
-        if due:
-            observations.append(tr(language, "due_observation", n=due))
-            questions.append(tr(language, "due_question"))
-        clicks = int(entry["klicks_letzte_7_tage"])
-        median = course["klicks_letzte_7_tage"].median()
-        if clicks == 0:
-            observations.append(tr(language, "zero_observation"))
-            questions.append(tr(language, "zero_question"))
-        elif clicks < median:
-            observations.append(tr(language, "low_observation"))
-        if not observations:
-            observations.append(tr(language, "no_observation"))
-        for observation in observations:
-            st.write("• " + observation)
-        st.markdown(f"**{tr(language, 'conversation')}**")
-        for question in questions:
-            st.write("• " + question)
-        st.write("• " + tr(language, "general_question"))
-        st.caption(tr(language, "detail_limit"))
-        st.markdown(f"**{tr(language, 'next_step_title')}**")
-        if due:
-            st.info(tr(language, "next_step_due"))
-        if history_known and entry["hinweisstatus"] == "Wiederholt im Upload":
-            st.info(tr(language, "next_step_repeat"))
-        elif not due:
-            st.info(tr(language, "next_step_first"))
-        st.caption(tr(language, "next_step_shared"))
-        st.caption(tr(language, "next_step_record"))
-        with st.expander(tr(language, "draft_title")):
-            st.write(tr(language, "draft_label"))
-            st.code(tr(language, "draft_text"), language=None)
-            st.caption(tr(language, "draft_limit"))
+    )
+    if event.selection.rows:
+        selected_row = person_options[event.selection.rows[0]]
+        if st.session_state[person_key] != selected_row:
+            st.session_state[person_key] = selected_row
+        # Die Zeile darf die spätere Auswahl im Dropdown nicht erneut überschreiben.
+        st.session_state["roster_epoch_v4"] = st.session_state.get("roster_epoch_v4", 0) + 1
+        st.rerun()
+    st.caption(tr(language, "missing_explain"))
+    selected = st.selectbox(
+        tr(language, "person_choose"), person_options,
+        format_func=lambda index: f"#{review.loc[index, 'rang']} · ID {review.loc[index, 'id_student']}",
+        key=person_key,
+    )
+    entry = review.loc[selected]
+    st.markdown(tr(language, "detail_title", id=entry["id_student"], day=day))
+    observations = []
+    questions = []
+    due = int(entry["assessments_fehlend"])
+    if due:
+        observations.append(tr(language, "due_observation", n=due))
+        questions.append(tr(language, "due_question"))
+    clicks = int(entry["klicks_letzte_7_tage"])
+    median = course["klicks_letzte_7_tage"].median()
+    if clicks == 0:
+        observations.append(tr(language, "zero_observation"))
+        questions.append(tr(language, "zero_question"))
+    elif clicks < median:
+        observations.append(tr(language, "low_observation"))
+    if not observations:
+        observations.append(tr(language, "no_observation"))
+    for observation in observations:
+        st.write("• " + observation)
+    st.markdown(f"**{tr(language, 'conversation')}**")
+    for question in questions:
+        st.write("• " + question)
+    st.write("• " + tr(language, "general_question"))
+    st.caption(tr(language, "detail_limit"))
+    st.markdown(f"**{tr(language, 'next_step_title')}**")
+    if due:
+        st.info(tr(language, "next_step_due"))
+    if history_known and entry["hinweisstatus"] == "Wiederholt im Upload":
+        st.info(tr(language, "next_step_repeat"))
+    elif pd.notna(entry["ersthinweis_tag"]) and entry["ersthinweis_tag"] < day:
+        st.info(tr(language, "next_step_repeat"))
+    elif not due:
+        st.info(tr(language, "next_step_first"))
+    st.caption(tr(language, "next_step_shared"))
 
-    # Kein zweites Klickdiagramm für dieselbe Person: Werte stehen in der Liste.
-    st.caption(tr(language, "contact_limit"))
+    st.markdown(f"**{tr(language, 'demo_status_title')}**")
+    state_key = entry_key(entry)
+    saved = demo_states.get(state_key, {"status": "open"})
+    status_options = ["open", "draft", "waiting", "talking", "followup", "done"]
+    status = st.selectbox(
+        tr(language, "demo_status_choose"), status_options,
+        index=status_options.index(saved["status"]),
+        format_func=lambda value: tr(language, "demo_" + value),
+        key=f"status_{state_key}",
+    )
+    followup_day = None
+    if status == "followup":
+        followup_day = st.number_input(
+            tr(language, "demo_followup_choose"), min_value=0, max_value=269,
+            value=int(saved.get("day", min(day + 7, 269))), step=1,
+            key=f"followup_{state_key}",
+        )
+    if st.button(tr(language, "demo_status_save")):
+        demo_states[state_key] = {"status": status, "day": followup_day}
+        st.rerun()
+    st.caption(tr(language, "demo_status_limit"))
+    st.caption(tr(language, "next_step_record"))
+    with st.expander(tr(language, "draft_title")):
+        st.write(tr(language, "draft_label"))
+        st.code(tr(language, "draft_text"), language=None)
+        st.caption(tr(language, "draft_limit"))
 
 elif view == "manager":
     st.subheader(tr(language, "manager_title"))
+    st.info(tr(language, "manager_provisional"))
     st.write(tr(language, "manager_intro"))
     manager_scope = st.radio(
-        tr(language, "manager_scope"), ["short", "extended"],
+        tr(language, "manager_scope"), ["short", "extended", "all"],
         index=1, horizontal=True,
         format_func=lambda value: tr(language, "manager_" + value),
         help=tr(language, "manager_scope_help"),
@@ -569,22 +707,27 @@ elif view == "manager":
     selected_total = int(workload["selected"].sum())
     hours_total = float(workload["workload_hours"].sum())
     coach_capacity = math.ceil(hours_total / hours_per_coach)
-    a, b, c, d = st.columns(4)
+    a, b = st.columns(2)
+    c, d = st.columns(2)
     a.metric(tr(language, "manager_selected"), selected_total)
     if history_available:
         b.metric(tr(language, "manager_first"), int(workload["first"].sum()))
     else:
-        b.metric(tr(language, "manager_first_unknown"), "—")
+        b.metric(tr(language, "manager_due"), int(workload["due_work"].sum()))
     c.metric(tr(language, "manager_hours"), f"{hours_total:.1f} h")
     d.metric(
         tr(language, "manager_coaches"), coach_capacity,
         help=tr(language, "manager_coaches_help"),
     )
-    st.caption(tr(language, "manager_history" if history_available else "manager_history_missing"))
+    history_note = (
+        "manager_history_all" if manager_scope == "all" else
+        "manager_history" if history_available else "manager_history_missing"
+    )
+    st.caption(tr(language, history_note))
 
     st.markdown(f"**{tr(language, 'manager_chart')}**")
     st.bar_chart(
-        workload.set_index("course")["workload_hours"].rename(
+        workload.sort_values("workload_hours", ascending=False).set_index("course")["workload_hours"].rename(
             tr(language, "manager_course_hours")
         ),
     )
@@ -614,6 +757,7 @@ elif view == "manager":
     )
     with st.expander(tr(language, "manager_method")):
         st.write(tr(language, "manager_formula"))
+    st.info(tr(language, "manager_decisions"))
     st.caption(tr(language, "manager_limits"))
     st.caption(tr(language, "manager_no_roles"))
 

@@ -41,8 +41,10 @@ CONTEXT = {
             "LearnerCue ist ein **lokaler Forschungsprototyp**: Eine vorbereitete "
             "CSV wird hochgeladen, und ein Modell sortiert die zu diesem "
             "Kurstag noch angemeldeten Kurseinträge innerhalb jedes Kurses. "
-            "Die kurze Liste umfasst etwa 10 %, die erweiterte etwa 20 %. "
-            "Ein Eintrag bedeutet: *fachlich prüfen und gegebenenfalls Hilfe anbieten*."
+            "Alle Personen des gewählten Kurses bleiben in der Rangliste. "
+            "Die farbigen Gruppen kennzeichnen nur relative Sichtungspriorität "
+            "(oberste rund 10 %, nächste rund 10 %, übrige Personen), keine "
+            "geprüfte persönliche Risikogrenze."
         ),
         "source_title": "Herkunft und Aufbau",
         "source_body": (
@@ -101,8 +103,10 @@ CONTEXT = {
             "Durchläufe als Trainingsdaten genutzt; 1.403 Personen mit "
             "Überschneidungen wurden aus der Demo ausgeschlossen. Nach dem "
             "Upload prüft die App Pflichtspalten und Werte, lädt das Modell "
-            "für den gewählten Tag und ordnet je Kurs die höchsten Modellwerte "
-            "den kurzen beziehungsweise erweiterten Prüflisten zu."
+            "für den gewählten Tag und sortiert alle Kurseinträge nach Modellwert. "
+            "Die kleine Datei `learnercue_ui_sample.csv` enthält dagegen "
+            "synthetische Eingaben ausschließlich zum Testen der Bedienung. "
+            "Ihre Modellränge belegen keine historische Güte."
         ),
         "model_title": "Welche Angaben beeinflussen die Reihenfolge?",
         "model_body": (
@@ -142,7 +146,9 @@ CONTEXT = {
             "nach Kurs sortierten Sichtung und macht die mögliche "
             "Betreuungsarbeit planbar. Coaches können Beobachtungen prüfen "
             "und passende Hilfe anbieten; die Leitungsansicht zeigt "
-            "Planungsannahmen für Zeit und Kapazität. Der nachgewiesene "
+            "vorläufige Planungsannahmen für Zeit und Kapazität. Ein "
+            "validiertes Leitungsprodukt wäre ein separates Folgeprojekt. "
+            "Der nachgewiesene "
             "Gewinn betrifft bisher nur die **Reihenfolge historischer "
             "Fälle**. Ob eine Ansprache Lernverläufe verbessert oder "
             "Arbeitszeit spart, muss erst in einer Einrichtung gemessen werden."
@@ -163,7 +169,7 @@ CONTEXT = {
             "Klickzahlen messen weder Verständnis noch Lernzeit außerhalb der Plattform; auch fehlende Aufgaben können technische oder organisatorische Gründe haben.",
             "Abbruch und Nichtbestehen sind verschiedene Ereignisse, werden hier aber gemeinsam priorisiert. Die konkrete Unterstützung entscheidet ein Mensch.",
             "Nur bis zum Stichtag noch angemeldete Personen und Wochen bis Tag 111 werden bewertet. Frühere Abbrüche und spätere Kursphasen sind nicht Teil dieses Prototyps.",
-            "Demo und Modelle enthalten keine Namen oder Kontaktwege. Die App versendet nichts, dokumentiert keine Gespräche und trennt Zugriffsrechte nicht nach Rollen.",
+            "Demo und Modelle enthalten keine Namen oder Kontaktwege. Die App versendet nichts. Beispielhafte Bearbeitungsstände gelten nur für die Browser-Sitzung und sind keine Dokumentation tatsächlicher Kontakte. Die getrennten Einstiege haben keine Zugriffsrechte.",
             "Die Wirkung einer Ansprache, Gruppenunterschiede und Einsatzkosten sind nicht unabhängig für eine andere Einrichtung belegt.",
         ],
         "sources_title": "Quellen und vertiefende Dokumentation",
@@ -176,9 +182,10 @@ CONTEXT = {
         "lead": (
             "LearnerCue is a **local research prototype**: upload a prepared "
             "CSV, and a model ranks the course entries still enrolled on a "
-            "selected day within each course. The short list covers roughly "
-            "10% and the extended list roughly 20%. A listed entry is an "
-            "invitation to *review the situation and consider offering help*."
+            "selected day within each course. Everyone remains on the ranked "
+            "roster. Colored groups show relative review priority (roughly "
+            "the top 10%, next 10%, and everyone else), not a validated "
+            "personal risk cutoff."
         ),
         "source_title": "Source and structure",
         "source_body": (
@@ -235,8 +242,10 @@ CONTEXT = {
             "were trained on earlier presentations; 1,403 people with "
             "overlap were excluded from the demo. After upload, the app "
             "checks the required columns and values, loads the model for "
-            "the selected day and places the highest ranked entries "
-            "within each course on short and extended review lists."
+            "the selected day and ranks every course entry by model score. "
+            "The small `learnercue_ui_sample.csv` instead contains synthetic "
+            "inputs solely for interface testing. Its model ranks provide "
+            "no evidence of historical performance."
         ),
         "model_title": "Which data influence the ranking?",
         "model_body": (
@@ -274,7 +283,9 @@ CONTEXT = {
             "The app brings existing course data into one review order and "
             "makes potential support workload visible. Coaches can verify "
             "observations and offer suitable help; the management view "
-            "shows adjustable assumptions about time and capacity. The "
+            "shows provisional assumptions about time and capacity. A "
+            "validated management product would be a separate follow-up "
+            "project. The "
             "demonstrated benefit so far concerns only **ranking "
             "historical cases**. Whether outreach improves learning "
             "or saves time must be measured in a real provider setting."
@@ -294,7 +305,7 @@ CONTEXT = {
             "Clicks do not measure understanding or study outside the platform; apparent missing work can also reflect technical or administrative issues.",
             "Withdrawal and failure are different events but are prioritised together here. A person decides what support is suitable.",
             "Only learners still enrolled at the chosen day and weeks up to day 111 are covered. Earlier withdrawals and later course stages are outside this prototype.",
-            "The demo and models contain no names or contact details. The app sends nothing, records no conversations and does not enforce user roles.",
+            "The demo and models contain no names or contact details. The app sends nothing. Illustrative work statuses last only for the browser session and are not records of actual contacts. Separate entry points do not enforce access rights.",
             "The effects of outreach, group differences and operational costs have not been independently established for another provider.",
         ],
         "sources_title": "Sources and further documentation",

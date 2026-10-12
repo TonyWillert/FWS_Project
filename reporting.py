@@ -4,7 +4,7 @@ from html import escape
 
 import pandas as pd
 
-from ui_text import local_group, local_status, tr
+from ui_text import local_group, tr
 
 
 def course_report(
@@ -16,23 +16,29 @@ def course_report(
     scope: str,
     selection: str,
     language: str,
+    synthetic: bool = False,
 ) -> bytes:
-    """Erstellt ein eigenständiges HTML mit genau dem sichtbaren Listenfilter."""
+    """Erstellt ein HTML mit der vollständigen Kursreihenfolge der Ansicht."""
     def h(value: object) -> str:
         """Schützt hochgeladene Werte vor HTML- und Markup-Ausführung."""
         return escape(str(value), quote=True)
     title = tr(language, "report_title")
     columns = [
         tr(language, key)
-        for key in ("col_id", "col_group", "col_status", "col_missing", "col_clicks")
+        for key in (
+            "col_rank", "col_id", "col_group", "col_status", "col_demo_status",
+            "col_missing", "col_clicks",
+        )
     ]
     headers = "".join(f"<th scope='col'>{h(label)}</th>" for label in columns)
     rows = []
     for row in review.itertuples(index=False):
         values = [
+            int(row.rang),
             row.id_student,
             local_group(language, row.hinweisstufe),
-            local_status(language, row.hinweisstatus),
+            row.listenverlauf,
+            row.bearbeitungsstand,
             int(row.assessments_fehlend),
             int(row.klicks_letzte_7_tage),
         ]
@@ -41,6 +47,10 @@ def course_report(
     due = int(review["assessments_fehlend"].gt(0).sum())
     summary = tr(language, "report_numbers", n=len(course), selected=len(review), due=due)
     snapshot = tr(language, "report_snapshot", day=day, course=name)
+    synthetic_notice = (
+        f"<p class='notice'>{h(tr(language, 'report_synthetic'))}</p>"
+        if synthetic else ""
+    )
     document = f"""<!doctype html>
 <html lang="{h(language)}">
 <head>
@@ -49,7 +59,7 @@ def course_report(
 <title>{h(title)} · {h(name)}</title>
 <style>
   :root {{ color-scheme: light; }}
-  body {{ font: 15px/1.55 system-ui, sans-serif; max-width: 1050px;
+  body {{ font: 17px/1.55 system-ui, sans-serif; max-width: 1150px;
           margin: 2rem auto; padding: 0 1.25rem; color: #252923; }}
   h1 {{ color: #274d43; margin-bottom: .2rem; }}
   .subtle {{ color: #526159; }}
@@ -68,7 +78,9 @@ def course_report(
 <p class="subtle">{h(snapshot)}</p>
 <p>{h(summary)}</p>
 <p><strong>{h(tr(language, 'report_scope'))}:</strong> {h(scope)} · {h(selection)}</p>
+{synthetic_notice}
 <p class="notice">{h(tr(language, 'report_note'))}</p>
+<p class="subtle">{h(tr(language, 'missing_explain'))}</p>
 <table><thead><tr>{headers}</tr></thead><tbody>{''.join(rows)}</tbody></table>
 <p class="print-tip subtle">{h(tr(language, 'report_print'))}</p>
 </body>
