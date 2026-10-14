@@ -2,6 +2,8 @@
 
 LearnerCue (zuvor LernRadar) ist ein Streamlit-Prototyp für die wöchentliche Sichtung von Kursen. Er ordnet **alle noch angemeldeten Kurseinträge** innerhalb jedes Kursdurchlaufs nach einem Modellwert. Farbige, auch textlich benannte Rangbereiche helfen bei der Sichtung (oberste rund 10 %, nächste rund 10 %, übrige Personen); sie sind keine geprüften persönlichen Risikogrenzen. Ein Eintrag ist ein Anlass für eine fachliche Sichtung und gegebenenfalls ein Unterstützungsangebot, keine automatische Entscheidung über Lernende.
 
+**[Live-Demo ausprobieren](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/)** · Öffne dort „Synthetische Demo starten“. Die öffentliche Testdatei zeigt die Bedienung und enthält keine echten Lernenden; die historischen Modellkennzahlen stehen in dieser README.
+
 ## Fragestellung
 
 Welche zu einem Kurstag noch angemeldeten Lernenden sollten bei begrenzter Betreuungskapazität zuerst geprüft werden, wenn das gemeinsame Ziel ein **späterer Kursabbruch oder das spätere Kursergebnis `Fail`** ist?
@@ -99,7 +101,7 @@ GitHub Pages kann die Portfolioseite mit einem Link zur App zeigen, aber keinen 
 1. Unter [share.streamlit.io](https://share.streamlit.io/) mit GitHub verbinden und eine neue App aus dem öffentlichen Repository `TonyWillert/FWS_Project`, Branch `main`, Einstieg `app.py` anlegen.
 2. In den erweiterten Einstellungen **Python 3.14** wählen: `pyproject.toml` verlangt mindestens 3.14 und `.python-version` enthält 3.14. Community Cloud erkennt die vorhandene `uv.lock` für die Abhängigkeiten. Die 16 gespeicherten Modelle und das Schema müssen im Repository bleiben.
 3. Nach dem Start die synthetische Demo mit einem Klick öffnen und den Weg **Coach → Diese Woche → Kurs prüfen → Person → Kursbericht** im öffentlichen Browser prüfen. Die lokale Datei unter `data/demo/` wird nicht mit Git übertragen und ist online nicht verfügbar.
-4. Erst nach erfolgreicher Prüfung die tatsächlich zugeteilte `*.streamlit.app`-Adresse in Portfolioseite, README und optional im LinkedIn-Profil verlinken. In der öffentlichen App keine echten personenbezogenen Kursdaten hochladen.
+4. Die Live-Demo läuft unter [LearnerCue auf Streamlit Community Cloud](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/). In der öffentlichen App keine echten personenbezogenen Kursdaten hochladen.
 
 Die öffentliche Testdatei demonstriert die Bedienung; die historischen Kennzahlen in dieser README stammen aus der getrennten OULAD-Auswertung. Der lokale OULAD-Durchlauf bleibt für eine fachliche Projektvorführung nötig.
 
