@@ -6,12 +6,14 @@ Diese Punkte nacheinander in der laufenden App prüfen. Hake sie erst ab, wenn d
 
 - [ ] Die App zeigt vor dem Upload keine Kursgrafiken oder Hinweise.
 - [ ] Logo und Titel, Sprache, Hilfe und Fehlerbericht sind sichtbar; die obere Menüleiste verdeckt nichts.
-- [ ] In einem frischen Klon lässt sich die synthetische Testdatei herunterladen und hochladen; mit lokal vorhandener OULAD-2014J-Datei erscheint stattdessen deren Download.
+- [ ] In einem frischen Klon lässt sich die synthetische Demo per Klick starten oder die Testdatei herunterladen und hochladen; mit lokal vorhandener OULAD-2014J-Datei erscheint deren Download.
 - [ ] Die synthetische Datei wird nach dem Upload als reiner Bedienungstest gekennzeichnet; die fachliche Vorführung verwendet die OULAD-2014J-Datei.
 - [ ] Eine ungeeignete CSV erzeugt eine verständliche Fehlermeldung.
 - [ ] Schon vor einem Upload zeigt **Hilfe & Hintergrund → Über die Demo** Datenherkunft, Modultabelle, Modellweg und Grenzen.
 
 ## Wöchentliche Sichtung
+
+- [ ] „Ab wann gilt eine Person als gefährdet?“ erklärt Kurstage ab Tag 6 und die fehlende validierte persönliche Risikoschwelle getrennt; in der Personendetailansicht ist ein erster Listentag auf die hochgeladenen Wochen begrenzt.
 
 - [ ] Der angezeigte Kurstag ist erkennbar; der jüngste hochgeladene Tag ist voreingestellt.
 - [ ] Die Bereichswahl führt getrennt zu Coach, Leitung und Projekthintergrund; innerhalb der Coach-Ansicht gibt es keine Leitungsregisterkarte.
