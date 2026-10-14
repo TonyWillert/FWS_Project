@@ -167,14 +167,42 @@ with fehlerknopf:
     if st.button(tr(language, "bug_button"), use_container_width=True):
         show_bug_report()
 
+def start_guided_demo():
+    """Öffnet die echte Coach-Oberfläche mit der synthetischen Beispieldatei."""
+    st.session_state["sample_active_v1"] = True
+    st.session_state["guided_demo_v1"] = True
+    st.session_state["area_v3"] = "coach"
+    st.session_state["coach_view_v3"] = "week"
+    # Bei einem Neustart führt die Tour wieder durch eine offene Beispielsliste.
+    st.session_state["demo_contact_v3"] = {}
+    for key in list(st.session_state):
+        if key.startswith(("list_view_", "person_select_v4_")):
+            del st.session_state[key]
+
+
+def use_own_csv():
+    st.session_state["sample_active_v1"] = False
+    st.session_state["guided_demo_v1"] = False
+
+
 # Vor einem Upload sind weder Kursgrafiken noch Hinweise sichtbar.
 hat_upload = (
     st.session_state.get("wochen_csv") is not None
     or st.session_state.get("sample_active_v1", False)
 )
+if not hat_upload:
+    st.subheader(tr(language, "demo_headline"))
+    st.write(tr(language, "demo_lead"))
+    if UI_BEISPIEL.exists():
+        st.button(
+            tr(language, "demo_primary"), type="primary",
+            on_click=start_guided_demo, key="guided_demo_primary",
+        )
+        st.caption(tr(language, "demo_data_note"))
+
 with st.expander(
     tr(language, "change_data" if hat_upload else "data_title"),
-    expanded=not hat_upload,
+    expanded=not hat_upload and not UI_BEISPIEL.exists(),
 ):
     st.write(tr(language, "data_intro"))
     if DEMODATEI.exists():
@@ -194,9 +222,11 @@ with st.expander(
         st.caption(tr(language, "sample_limit"))
     if UI_BEISPIEL.exists():
         sample_active = st.session_state.get("sample_active_v1", False)
-        if st.button(tr(language, "sample_stop" if sample_active else "sample_start")):
-            st.session_state["sample_active_v1"] = not sample_active
-            st.rerun()
+        st.button(
+            tr(language, "sample_stop" if sample_active else "sample_start"),
+            on_click=use_own_csv if sample_active else start_guided_demo,
+            key="guided_demo_data_toggle",
+        )
     else:
         sample_active = False
     upload = None
@@ -212,10 +242,12 @@ if sample_active:
     upload.name = UI_BEISPIEL.name
 
 if upload is None:
-    st.info(tr(language, "no_upload"))
+    if not UI_BEISPIEL.exists():
+        st.info(tr(language, "no_upload"))
     st.stop()
 
 synthetic_upload = UI_BEISPIEL.exists() and upload.getvalue() == UI_BEISPIEL.read_bytes()
+guided_demo = synthetic_upload and st.session_state.get("guided_demo_v1", False)
 if synthetic_upload:
     st.warning(tr(language, "sample_limit"))
 
@@ -335,7 +367,7 @@ def open_context():
     st.session_state["area_v3"] = "background"
 
 
-area = st.session_state.get("area_v3", "home")
+area = st.session_state.get("area_v3", "coach")
 if area not in ("home", "coach", "manager", "background"):
     area = "home"
 
@@ -382,7 +414,17 @@ else:
 
 if view == "week":
     st.subheader(tr(language, "nav_week"))
-    st.write(tr(language, "week_intro"))
+    if guided_demo:
+        st.info(tr(language, "tour_week"))
+        example_course = next(
+            (name for name in course_names if name == "BBB 2014J"), course_names[0]
+        )
+        st.button(
+            tr(language, "tour_open_course", course=example_course),
+            type="primary", on_click=open_course, args=(example_course,),
+        )
+    if not guided_demo:
+        st.write(tr(language, "week_intro"))
     left, middle, right = st.columns(3)
     left.metric(tr(language, "metric_entries"), len(week))
     middle.metric(tr(language, "metric_courses"), len(overview))
@@ -490,10 +532,12 @@ elif view == "course":
     first_metric.metric(tr(language, "priority_first"), count_short)
     next_metric.metric(tr(language, "priority_next"), count_extended - count_short)
     rest_metric.metric(tr(language, "priority_rest"), len(course) - count_extended)
-    st.info(tr(language, "priority_explain"))
-    with st.expander(tr(language, "risk_when_title")):
+    st.caption(tr(language, "priority_summary"))
+    with st.expander(tr(language, "read_list_title")):
+        st.write(tr(language, "priority_explain"))
+        st.markdown(f"**{tr(language, 'risk_when_title')}**")
         st.markdown(tr(language, "risk_when_explain", day=day))
-    with st.expander(tr(language, "scope_evidence_title")):
+        st.markdown(f"**{tr(language, 'scope_evidence_title')}**")
         st.write(tr(language, "scope_evidence"))
 
     review = course.copy().reset_index(drop=True)
@@ -532,30 +576,35 @@ elif view == "course":
     )
     open_count = int(review["naechster_schritt"].eq("review").sum())
     due_count = int(review["naechster_schritt"].eq("due").sum())
-    st.markdown(f"**{tr(language, 'worklist_title')}**")
-    st.caption(tr(language, "worklist_explain", open=open_count, due=due_count))
+    st.subheader(tr(language, "worklist_title"))
+    if guided_demo:
+        st.info(tr(language, "tour_list", course=course_name, day=day))
+    else:
+        st.caption(tr(language, "worklist_explain", open=open_count, due=due_count))
     list_view = st.radio(
         tr(language, "worklist_choose"), ["all", "next"],
         format_func=lambda value: tr(language, "worklist_" + value),
-        horizontal=True, key=f"list_view_{file_key}_{course_name}_{day}",
+        horizontal=True, index=1 if guided_demo else 0,
+        key=f"list_view_{file_key}_{course_name}_{day}",
     )
     visible = review if list_view == "all" else review.loc[review["naechster_schritt"].notna()]
     st.write(tr(language, "list_summary", n=len(visible), total=len(review)))
-    # Bericht und Oberfläche verwenden exakt dieselbe vollständige Rangliste.
-    st.download_button(
-        tr(language, "report_button"),
-        data=course_report(
-            course, review, day=day, name=course_name,
-            scope=tr(language, "scope_all"),
-            selection=tr(language, "filter_all"),
-            language=language, synthetic=synthetic_upload,
-        ),
-        file_name=tr(language, "report_file", day=day, course=course_name.replace(" ", "_")),
-        mime="text/html",
-        help=tr(language, "report_help"),
-    )
-    if list_view == "next":
-        st.caption(tr(language, "report_full"))
+    # Der optionale Bericht bleibt auch bei einer leeren Arbeitsansicht erreichbar.
+    with st.expander(tr(language, "report_open")):
+        st.download_button(
+            tr(language, "report_button"),
+            data=course_report(
+                course, review, day=day, name=course_name,
+                scope=tr(language, "scope_all"),
+                selection=tr(language, "filter_all"),
+                language=language, synthetic=synthetic_upload,
+            ),
+            file_name=tr(language, "report_file", day=day, course=course_name.replace(" ", "_")),
+            mime="text/html",
+            help=tr(language, "report_help"),
+        )
+        if list_view == "next":
+            st.caption(tr(language, "report_full"))
     if visible.empty:
         st.info(tr(language, "worklist_empty"))
         st.stop()
@@ -615,6 +664,8 @@ elif view == "course":
         key=person_key,
     )
     entry = review.loc[selected]
+    if guided_demo:
+        st.info(tr(language, "tour_person", id=entry["id_student"]))
     st.markdown(tr(language, "detail_title", id=entry["id_student"], day=day))
     st.caption(tr(
         language, "person_priority_current", day=day, rank=entry["rang"],
@@ -656,6 +707,9 @@ elif view == "course":
     elif not due:
         st.info(tr(language, "next_step_first"))
     st.caption(tr(language, "next_step_shared"))
+    if guided_demo and st.button(tr(language, "tour_finish")):
+        st.session_state["guided_demo_v1"] = False
+        st.rerun()
 
     st.markdown(f"**{tr(language, 'demo_status_title')}**")
     state_key = entry_key(entry)
