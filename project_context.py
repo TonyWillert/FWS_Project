@@ -38,10 +38,12 @@ CONTEXT = {
     "de": {
         "title": "Über die Demo und ihre Daten",
         "lead": (
-            "LearnerCue ist ein **lokaler Forschungsprototyp**: Eine vorbereitete "
-            "CSV wird hochgeladen, und ein Modell sortiert die zu diesem "
-            "Kurstag noch angemeldeten Kurseinträge innerhalb jedes Kurses. "
-            "Alle Personen des gewählten Kurses bleiben in der Rangliste. "
+            "**Hauptergebnis:** eine wöchentliche Prüfliste für Coaches. "
+            "Eine vorbereitete CSV wird hochgeladen, Kurstag und Kurs werden "
+            "gewählt, und das Modell sortiert die noch angemeldeten Einträge "
+            "dieses Kurses. Der Coach sieht Beobachtungen und prüft selbst, "
+            "ob ein Unterstützungsangebot sinnvoll ist. "
+            "Alle Personen bleiben in der Rangliste. "
             "Die farbigen Gruppen kennzeichnen nur relative Sichtungspriorität "
             "(oberste rund 10 %, nächste rund 10 %, übrige Personen), keine "
             "geprüfte persönliche Risikogrenze."
@@ -180,10 +182,11 @@ CONTEXT = {
     "en": {
         "title": "About the demo and its data",
         "lead": (
-            "LearnerCue is a **local research prototype**: upload a prepared "
-            "CSV, and a model ranks the course entries still enrolled on a "
-            "selected day within each course. Everyone remains on the ranked "
-            "roster. Colored groups show relative review priority (roughly "
+            "**Main output:** a weekly review list for coaches. Upload a "
+            "prepared CSV, choose a course day and course, and the model ranks "
+            "the entries still enrolled. A coach checks the observations "
+            "and decides whether to offer support. Everyone remains on the "
+            "ranked roster. Colored groups show relative review priority (roughly "
             "the top 10%, next 10%, and everyone else), not a validated "
             "personal risk cutoff."
         ),
