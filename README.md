@@ -1,12 +1,14 @@
 # LearnerCue: Early support signals from OULAD
 
-[Try the live Streamlit demo](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/) · [Deutsche Dokumentation](README.de.md)
+[Try the live Streamlit demo](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/) · [Watch the 40-second demo](assets/learnercue_demo.mp4) · [Deutsche Dokumentation](README.de.md)
 
 LearnerCue (formerly LernRadar) is a Streamlit prototype for weekly course review. It ranks **all learners still enrolled** in each course presentation by a model score. The top approximately 10%, the next approximately 10%, and everyone else are labelled review groups, **not validated individual risk thresholds**. A signal invites a coach to review the situation and consider support; it is not an automated decision about a learner.
 
 **Primary workflow and output:** Start the sample or upload a prepared weekly CSV → choose a course day and course → inspect the **weekly review list** → check an entry and consider an offer of support. The management view adds a workload estimate. The [60–90-second walkthrough](docs/demo_walkthrough.md) gives the exact clicks for a live tour or screen recording.
 
 In the public app, select **“Start guided example”** (or **“Geführtes Beispiel starten”**). Its fabricated records demonstrate the interface. The historical model results below come from a separate OULAD analysis.
+
+The optional **40-second demo video** sits directly below the start button in an expandable section. It shows the Coach workflow from the course overview to the review list and a possible next step. The video is silent, with English captions, and uses the synthetic sample. It is stored in this repository and played directly in the app.
 
 ## The question
 
@@ -129,6 +131,7 @@ The demonstrated value is a better **order for human review** of the historical 
 | `docs/demo_walkthrough.md` | Short click path for a live or recorded walkthrough |
 | `docs/operations_guide.md` | Contact strategy and planning assumptions (German) |
 | `assets/learnercue.svg` | Vector logo and browser icon |
+| `assets/learnercue_demo.mp4` | Short Coach walkthrough with English captions |
 | `models/oulad_wochen/` | Schema and 16 saved model pipelines |
 | `examples/learnercue_ui_sample.csv` | Small synthetic CSV for a fresh clone |
 

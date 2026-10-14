@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from io import BytesIO
 from pathlib import Path
-import json
 
 import joblib
 import numpy as np
 import pandas as pd
-
 
 SCHLUESSEL = ["code_module", "code_presentation", "id_student"]
 KURS = ["code_module", "code_presentation"]

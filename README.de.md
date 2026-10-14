@@ -2,9 +2,11 @@
 
 LearnerCue (zuvor LernRadar) ist ein Streamlit-Prototyp für die wöchentliche Sichtung von Kursen. Er ordnet **alle noch angemeldeten Kurseinträge** innerhalb jedes Kursdurchlaufs nach einem Modellwert. Farbige, auch textlich benannte Rangbereiche helfen bei der Sichtung (oberste rund 10 %, nächste rund 10 %, übrige Personen); sie sind keine geprüften persönlichen Risikogrenzen. Ein Eintrag ist ein Anlass für eine fachliche Sichtung und gegebenenfalls ein Unterstützungsangebot, keine automatische Entscheidung über Lernende.
 
-**[Live-Demo ausprobieren](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/)** · Dort **Geführtes Beispiel starten** wählen. Die öffentliche Testdatei enthält keine echten Lernenden; die historischen Modellkennzahlen stehen in dieser README.
+**[Live-Demo ausprobieren](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/)** · [Demo-Video ansehen (40 Sekunden)](assets/learnercue_demo.mp4). In der App **Geführtes Beispiel starten** wählen. Die öffentliche Testdatei enthält keine echten Lernenden; die historischen Modellkennzahlen stehen in dieser README.
 
 **Hauptablauf und Ergebnis:** Beispieldaten starten oder eine vorbereitete Wochen-CSV hochladen → Kurstag und Kurs wählen → die **wöchentliche Prüfliste** ansehen → einen Eintrag fachlich prüfen und gegebenenfalls Unterstützung anbieten. Die Leitungsansicht schätzt ergänzend den möglichen Zeitbedarf; sie ist nicht das Hauptergebnis. Das [kurze Demo-Drehbuch](docs/demo_walkthrough.md) zeigt die genaue Klickfolge für einen Rundgang oder ein Bildschirmvideo.
+
+Direkt unter dem Startbutton lässt sich optional das **40-Sekunden-Demo-Video** öffnen. Es zeigt den Coach-Ablauf vom Kursüberblick zur Prüfliste und einem möglichen nächsten Schritt. Das Video ist stumm, hat englische Einblendungen und verwendet die synthetischen Beispieldaten. Es liegt in diesem Repository und wird direkt in der App abgespielt.
 
 ## Fragestellung
 
@@ -135,6 +137,7 @@ Der bisher nachgewiesene Nutzen ist eine bessere **Reihenfolge für die fachlich
 | `docs/demo_walkthrough.md` | Kurzer Klickpfad und Ablauf für eine Bildschirmvorführung |
 | `docs/operations_guide.md` | Kontaktstrategie, historische Fallzahlen und Planungsannahmen |
 | `assets/learnercue.svg` | Vektorlogo und Browser-Icon |
+| `assets/learnercue_demo.mp4` | Kurzer Coach-Ablauf mit englischen Einblendungen |
 | `models/oulad_wochen/` | Gespeichertes Schema und 16 Modell-Pipelines |
 | `examples/learnercue_ui_sample.csv` | Kleine synthetische CSV für einen Bedienungstest nach frischem Klon |
 
