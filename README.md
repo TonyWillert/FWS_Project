@@ -4,7 +4,9 @@
 
 LearnerCue (formerly LernRadar) is a Streamlit prototype for weekly course review. It ranks **all learners still enrolled** in each course presentation by a model score. The top approximately 10%, the next approximately 10%, and everyone else are labelled review groups, **not validated individual risk thresholds**. A signal invites a coach to review the situation and consider support; it is not an automated decision about a learner.
 
-In the public app, select **“Start synthetic demo”** (or **“Synthetische Demo starten”**). Its fabricated records demonstrate the interface. The historical model results below come from a separate OULAD analysis.
+**Primary workflow and output:** Start the sample or upload a prepared weekly CSV → choose a course day and course → inspect the **weekly review list** → check an entry and consider an offer of support. The management view adds a workload estimate. The [60–90-second walkthrough](docs/demo_walkthrough.md) gives the exact clicks for a live tour or screen recording.
+
+In the public app, select **“Start guided example”** (or **“Geführtes Beispiel starten”**). Its fabricated records demonstrate the interface. The historical model results below come from a separate OULAD analysis.
 
 ## The question
 
@@ -70,9 +72,9 @@ uv sync --locked
 uv run streamlit run app.py
 ```
 
-The app requires `models/oulad_wochen/schema.json` and the 16 saved models `tag_006.joblib` through `tag_111.joblib`. They and `uv.lock` are committed. After launch, use the synthetic demo or upload a prepared CSV.
+The app requires `models/oulad_wochen/schema.json` and the 16 saved models `tag_006.joblib` through `tag_111.joblib`. They and `uv.lock` are committed. After launch, **Start guided example** is the main action; upload a prepared CSV in the expandable file area.
 
-`examples/learnercue_ui_sample.csv` contains **120 synthetic snapshots** for BBB and CCC at days 6, 13, and 20. Open it with the demo button or download and upload it after a fresh clone. The identifiers and observations are fabricated, and its rankings are computed with the saved models solely to test the interface. **Do not calculate model performance or draw conclusions about real learners from this file.**
+**Start guided example** loads `examples/learnercue_ui_sample.csv` and opens the Coach view directly. A button opens BBB 2014J; “Review now” is initially selected and an example entry appears beneath the list with observations and a possible next step. You can finish the guide while keeping the sample open. The file can also be downloaded. It contains **120 synthetic snapshots** for BBB and CCC at days 6, 13, and 20. The identifiers and observations are fabricated, and its rankings are computed with the saved models solely to test the interface. **Do not calculate model performance or draw conclusions about real learners from this file.**
 
 For a research presentation using historical OULAD data, use the locally generated `data/demo/oulad_wochen_2014j.csv`. Notebook `11_wochenmodelle_export.ipynb` exports it from the prepared weekly dataset. The `data/` directory is Git-ignored, so this file is not part of the repository or public deployment. When present locally, its download replaces the smaller synthetic sample. You can also upload another prepared CSV; raw OULAD tables are **not** directly accepted.
 
@@ -82,13 +84,13 @@ Required CSV columns (additional columns are ignored):
 code_module,code_presentation,id_student,stichtag,anmeldetag,assessments_faellig,abgaben,banked_faellige,assessments_fehlend,klicks_bis_stichtag,klicks_letzte_7_tage
 ```
 
-The app validates the input and loads a model for each included checkpoint. Two separate entry points follow: **Coach**, with a weekly overview and course review; and **Management / Lead Coach**, a provisional planning scenario. In the weekly overview, click a course table row or use the course selector. Course review displays **the full roster in model order** by default; click a row or select a person to inspect observations and an explicitly simulated workflow status. The optional “Review now” view focuses on priority entries marked “not yet reviewed” and example follow-ups due that day. Replies pending, conversations, and later follow-ups are not due. A lower-ranked person with a due follow-up may also appear, with their full-roster rank visible. This view neither records real contacts nor decides automatically whom to contact.
+The app validates the input and loads a model for each included checkpoint. It opens the **Coach** weekly overview by default; **Change area** leads to **Management / Lead Coach** or the project background. In the weekly overview, click a course table row or use the course selector. With your own upload, course review displays **the full roster in model order** by default; the guided synthetic example initially selects “Review now.” Click a row or select a person to inspect observations and an explicitly simulated workflow status. “Review now” focuses on priority entries marked “not yet reviewed” and example follow-ups due that day. Replies pending, conversations, and later follow-ups are not due. A lower-ranked person with a due follow-up may also appear, with their full-roster rank visible. This view neither records real contacts nor decides automatically whom to contact.
 
-A third **About the project** entry point explains the data, anonymised modules, model path, historical comparison, possible value, and limits. Before upload, the same background is accessible through **Help & background → About the demo**. Help also contains a walkthrough and glossary. The course page displays the supported subject area and, for 2014J, course duration, rather than inventing a course title. Tooltips explain key columns and controls. The most recent uploaded checkpoint is selected initially. Model scores determine ordering; they are **not calibrated personal probabilities of failure**.
+**About the project** explains the data, anonymised modules, model path, historical comparison, possible value, and limits. Before upload, the same background is accessible through **Help & background → About the demo**. Help also contains the short main workflow and a glossary. Longer explanations of the rank groups sit in an expandable section on the course page, so the review list stays prominent. The course page displays the supported subject area and, for 2014J, course duration, rather than inventing a course title. Tooltips explain key columns and controls. The most recent uploaded checkpoint is selected initially. Model scores determine ordering; they are **not calibrated personal probabilities of failure**.
 
 Switch between German and English at the top. Light and dark themes are defined in `.streamlit/config.toml` and selected in Streamlit's **Settings → Theme** menu. Known CSV errors are translated; unexpected errors have an English summary and optional technical details.
 
-**Download course report** creates a local printable HTML report for the full course ranking on the selected day, even while “Review now” is active. It includes anonymised IDs, observed assessment and click counts, and any simulated status in the current browser session, but no target outcome or established personal risk probability. Protect the report because it contains identifiers. An optional neutral message draft for a selected learner can be reviewed and copied by a coach; **no messages are sent**. **Report an issue** saves a text report locally and sends nothing automatically. The optional GitHub link is suitable only for reports without personal data.
+**Optional: download the full course report** opens a local printable HTML report for the full course ranking on the selected day, even while “Review now” is active. It includes anonymised IDs, observed assessment and click counts, and any simulated status in the current browser session, but no target outcome or established personal risk probability. Protect the report because it contains identifiers. An optional neutral message draft for a selected learner can be reviewed and copied by a coach; **no messages are sent**. **Report an issue** saves a text report locally and sends nothing automatically. The optional GitHub link is suitable only for reports without personal data.
 
 “New” and “seen before” describe priority rank groups within the **uploaded CSV's weeks**, not contact history. Example states such as “message prepared,” “awaiting reply,” or “follow up on day …” last only for the browser session and are not records of actual conversations. Management list history covers the selected priority groups; its capacity estimate can include the first group, both groups, or all entries. Contact shares and minutes are assumptions. **The management KPIs are a provisional concept; a dependable management product would be a separate project.** The CSV omits later outcomes. The entry points do not implement access control. At day 27, the historical 20% selection covered only 34.1% of later cases, which is why the coach roster retains everyone. Clicks and missing assessments are observations, not demonstrated causes of an individual signal.
 
@@ -98,7 +100,7 @@ The coach view also answers **“When is a learner considered at risk?”** A mo
 
 GitHub Pages hosts a portfolio page linking to the app; it cannot run the Streamlit Python process. LinkedIn can feature the external link but does not host the app. The live app is deployed on [Streamlit Community Cloud](https://share.streamlit.io/) from the public `TonyWillert/FWS_Project` repository, `main` branch, and `app.py`. Its deployment uses Python 3.14 as specified by `pyproject.toml` and `.python-version`, the committed `uv.lock`, models, and schema.
 
-[Open the LearnerCue demo](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/) and try **Coach → This week → Review course → Person → Course report** using the synthetic sample. Do **not** upload real personal course data to the public app. Historical metrics here derive from the separate OULAD evaluation; a local OULAD export is needed for a research walkthrough.
+[Open the LearnerCue demo](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/) and try **Start guided example → This week → Open BBB 2014J → Weekly review list → Example entry and next step**. Then check “Everyone in course,” Change area, and the optional course report. Do **not** upload real personal course data to the public app. Historical metrics here derive from the separate OULAD evaluation; a local OULAD export is needed for a research walkthrough.
 
 ## Value and potential use
 
@@ -124,6 +126,7 @@ The demonstrated value is a better **order for human review** of the historical 
 | `operations.py` | Management aggregation and capacity estimate |
 | `.streamlit/config.toml` | Light and dark themes |
 | `docs/ux_kurztest.md`, `docs/ux_checkliste.md` | First usability test and review checklist (German) |
+| `docs/demo_walkthrough.md` | Short click path for a live or recorded walkthrough |
 | `docs/operations_guide.md` | Contact strategy and planning assumptions (German) |
 | `assets/learnercue.svg` | Vector logo and browser icon |
 | `models/oulad_wochen/` | Schema and 16 saved model pipelines |
