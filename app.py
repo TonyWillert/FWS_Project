@@ -1,6 +1,7 @@
 """LearnerCue: wöchentliche fachliche Sichtung historischer OULAD-Kurse."""
 
 import hashlib
+import importlib
 from io import BytesIO
 import logging
 import math
@@ -11,6 +12,15 @@ import streamlit as st
 
 from coach_workflow import next_step_reason
 from operations import course_workload
+import project_context
+import ui_text
+
+# Community Cloud can rerun a new app.py in a process that still has the old
+# imported copy in memory. Refresh both copy modules when this release is seen.
+if "demo_headline" not in ui_text.TEXT["de"]:
+    importlib.reload(ui_text)
+    importlib.reload(project_context)
+
 from project_context import (
     CONTEXT, DATASET_URL, PAPER_URL, course_profile, file_overview, module_overview,
 )
