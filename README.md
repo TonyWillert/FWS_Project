@@ -1,6 +1,6 @@
 # LearnerCue: Frühwarnhinweise für Lernende mit OULAD
 
-LearnerCue (zuvor LernRadar) ist ein lokaler Streamlit-Prototyp für die wöchentliche Sichtung von Kursen. Er ordnet **alle noch angemeldeten Kurseinträge** innerhalb jedes Kursdurchlaufs nach einem Modellwert. Farbige, auch textlich benannte Rangbereiche helfen bei der Sichtung (oberste rund 10 %, nächste rund 10 %, übrige Personen); sie sind keine geprüften persönlichen Risikogrenzen. Ein Eintrag ist ein Anlass für eine fachliche Sichtung und gegebenenfalls ein Unterstützungsangebot, keine automatische Entscheidung über Lernende.
+LearnerCue (zuvor LernRadar) ist ein Streamlit-Prototyp für die wöchentliche Sichtung von Kursen. Er ordnet **alle noch angemeldeten Kurseinträge** innerhalb jedes Kursdurchlaufs nach einem Modellwert. Farbige, auch textlich benannte Rangbereiche helfen bei der Sichtung (oberste rund 10 %, nächste rund 10 %, übrige Personen); sie sind keine geprüften persönlichen Risikogrenzen. Ein Eintrag ist ein Anlass für eine fachliche Sichtung und gegebenenfalls ein Unterstützungsangebot, keine automatische Entscheidung über Lernende.
 
 ## Fragestellung
 
@@ -68,9 +68,9 @@ uv sync --locked
 uv run streamlit run app.py
 ```
 
-Die App benötigt neben dem Code `models/oulad_wochen/schema.json` und die 16 gespeicherten Modelle `tag_006.joblib` bis `tag_111.joblib`. Diese Modelldateien und `uv.lock` wurden für das Repository versioniert; prüfe nach einem frischen Klon, ob sie tatsächlich vorhanden sind. Nach dem Start erscheint zunächst nur der Upload.
+Die App benötigt neben dem Code `models/oulad_wochen/schema.json` und die 16 gespeicherten Modelle `tag_006.joblib` bis `tag_111.joblib`. Diese Modelldateien und `uv.lock` wurden für das Repository versioniert; prüfe nach einem frischen Klon, ob sie tatsächlich vorhanden sind. Nach dem Start stehen die synthetische Demo und der Upload zur Wahl.
 
-Für einen **frischen Klon** lässt sich die mitgelieferte `examples/learnercue_ui_sample.csv` in der App herunterladen und hochladen. Sie enthält 120 **synthetische** Wochenstände zu BBB und CCC an Tag 6, 13 und 20. Kennungen, Beobachtungen und die mit den echten Modellen berechnete Rangfolge dienen ausschließlich dazu, die Bedienung zu prüfen. Aus dieser Datei darf keine Trefferquote, Modellgüte oder Aussage über reale Lernende abgeleitet werden.
+Für einen **frischen Klon** lässt sich die mitgelieferte `examples/learnercue_ui_sample.csv` mit „Synthetische Demo starten“ direkt öffnen oder herunterladen und hochladen. Sie enthält 120 **synthetische** Wochenstände zu BBB und CCC an Tag 6, 13 und 20. Kennungen, Beobachtungen und die mit den echten Modellen berechnete Rangfolge dienen ausschließlich dazu, die Bedienung zu prüfen. Aus dieser Datei darf keine Trefferquote, Modellgüte oder Aussage über reale Lernende abgeleitet werden.
 
 Für die **fachliche Projektvorführung** die lokale `data/demo/oulad_wochen_2014j.csv` verwenden. Sie wird durch `11_wochenmodelle_export.ipynb` aus der vorbereiteten Wochenbasis erzeugt und liegt wegen des ignorierten Ordners `data/` nicht im Git-Repository. Wenn sie im Projektordner vorhanden ist, erscheint ihr Download statt der kleinen Testdatei. Ohne sie lässt sich eine entsprechend vorbereitete eigene CSV hochladen; OULAD-Rohdateien sind **kein** direktes Upload-Format.
 
@@ -89,6 +89,19 @@ Deutsch und Englisch lassen sich oben auf der Seite wechseln. Das helle und dunk
 Unter **Kurs prüfen** erstellt **Kursbericht herunterladen** einen lokalen, druckbaren HTML-Bericht mit der vollständigen Kursreihenfolge für den gewählten Tag, **auch wenn „Jetzt prüfen“ aktiv ist**. Er enthält anonymisierte IDs, beobachtete Leistungs- und Klickzahlen sowie gegebenenfalls den im aktuellen Browser simulierten Bearbeitungsstand, aber keine Ergebnisvariable und keine gesicherte persönliche Risikowahrscheinlichkeit. Der Bericht sollte wegen der Kennungen geschützt aufbewahrt werden. Für die ausgewählte Person zeigt ein optionaler Bereich einen neutralen Nachrichtentext, den ein Coach selbst prüfen und kopieren kann. Es werden keine Nachrichten versendet. **Fehler melden** öffnet ein Formular für einen lokal gespeicherten Textbericht; es versendet weder Daten noch einen Bericht automatisch. Der optionale GitHub-Link ist nur für Berichte ohne personenbezogene Daten geeignet.
 
 „Neu“ und „schon früher“ beziehen sich ausschließlich auf vorrangige Rangbereiche in den Wochen **dieser CSV**, nicht auf Kontakte. Daneben kann man für eine Person einen **Beispielstatus** wie „Nachricht vorbereitet“, „Antwort ausstehend“ oder „Wiedervorlage an Tag …“ setzen. Dieser Status gilt nur während der Browser-Sitzung und ist keine Dokumentation tatsächlich geführter Gespräche. Die Leitungsansicht berechnet Listenhistorie nur für die gewählten vorrangigen Rangbereiche. Für die Kapazitätsrechnung lassen sich die erste Gruppe, beide vorrangigen Gruppen oder **alle Kurseinträge** auswählen; Minuten und Kontaktanteile sind Annahmen. **Diese Leitungskennzahlen sind ein vorläufiges Konzept; ein belastbares Managementprodukt wäre ein separates Projekt.** Die CSV enthält keine späteren Kursergebnisse. Die getrennten Einstiege sind keine Benutzerrollen mit Zugriffsrechten. An Tag 27 umfasste die historische 20-%-Auswahl nur 34,1 % der späteren Fälle; die Coach-Liste blendet die übrigen Kurseinträge nicht mehr aus. Klicks und offene Leistungen sind beobachtete Daten, keine nachgewiesenen Gründe für einen individuellen Hinweis. Ein kurzer Test der Bedienbarkeit ist in `docs/ux_kurztest.md` vorbereitet; `docs/ux_checkliste.md` enthält nacheinander abharkbare Prüfungen.
+
+Die Coach-Ansicht beantwortet unter „Ab wann gilt eine Person als gefährdet?“ zwei verschiedene Fragen: Ein Modellhinweis ist für noch angemeldete Kurseinträge ab Tag 6 wöchentlich möglich; eine **validierte individuelle Risikoschwelle** oder ein nachgewiesener Beginn persönlicher Gefährdung existiert nicht. Die obersten rund 10 und nächsten rund 10 % sind Sichtungsgruppen je Kurs. Bei ausgewählten Personen zeigt die Detailansicht den aktuellen Rang und gegebenenfalls den ersten Tag auf der vorrangigen Liste **innerhalb der hochgeladenen Wochen**. Auch Personen außerhalb dieser Gruppen können später abbrechen oder nicht bestehen.
+
+## Öffentliche Portfoliodemo
+
+GitHub Pages kann die Portfolioseite mit einem Link zur App zeigen, aber keinen Python-Prozess für Streamlit ausführen. LinkedIn kann denselben externen Link im Profil hervorheben; es hostet die App nicht. Eine passende Hosting-Option ist **Streamlit Community Cloud**:
+
+1. Unter [share.streamlit.io](https://share.streamlit.io/) mit GitHub verbinden und eine neue App aus dem öffentlichen Repository `TonyWillert/FWS_Project`, Branch `main`, Einstieg `app.py` anlegen.
+2. In den erweiterten Einstellungen **Python 3.14** wählen: `pyproject.toml` verlangt mindestens 3.14 und `.python-version` enthält 3.14. Community Cloud erkennt die vorhandene `uv.lock` für die Abhängigkeiten. Die 16 gespeicherten Modelle und das Schema müssen im Repository bleiben.
+3. Nach dem Start die synthetische Demo mit einem Klick öffnen und den Weg **Coach → Diese Woche → Kurs prüfen → Person → Kursbericht** im öffentlichen Browser prüfen. Die lokale Datei unter `data/demo/` wird nicht mit Git übertragen und ist online nicht verfügbar.
+4. Erst nach erfolgreicher Prüfung die tatsächlich zugeteilte `*.streamlit.app`-Adresse in Portfolioseite, README und optional im LinkedIn-Profil verlinken. In der öffentlichen App keine echten personenbezogenen Kursdaten hochladen.
+
+Die öffentliche Testdatei demonstriert die Bedienung; die historischen Kennzahlen in dieser README stammen aus der getrennten OULAD-Auswertung. Der lokale OULAD-Durchlauf bleibt für eine fachliche Projektvorführung nötig.
 
 ## Nutzen und möglicher Einsatzkontext
 

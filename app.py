@@ -1,6 +1,7 @@
 """LearnerCue: wöchentliche fachliche Sichtung historischer OULAD-Kurse."""
 
 import hashlib
+from io import BytesIO
 import logging
 import math
 from pathlib import Path
@@ -167,7 +168,10 @@ with fehlerknopf:
         show_bug_report()
 
 # Vor einem Upload sind weder Kursgrafiken noch Hinweise sichtbar.
-hat_upload = st.session_state.get("wochen_csv") is not None
+hat_upload = (
+    st.session_state.get("wochen_csv") is not None
+    or st.session_state.get("sample_active_v1", False)
+)
 with st.expander(
     tr(language, "change_data" if hat_upload else "data_title"),
     expanded=not hat_upload,
@@ -188,11 +192,24 @@ with st.expander(
             mime="text/csv",
         )
         st.caption(tr(language, "sample_limit"))
-    upload = st.file_uploader(
-        tr(language, "upload_label"), type="csv", key="wochen_csv",
-        help=tr(language, "upload_help"),
-    )
-    st.caption(tr(language, "upload_help"))
+    if UI_BEISPIEL.exists():
+        sample_active = st.session_state.get("sample_active_v1", False)
+        if st.button(tr(language, "sample_stop" if sample_active else "sample_start")):
+            st.session_state["sample_active_v1"] = not sample_active
+            st.rerun()
+    else:
+        sample_active = False
+    upload = None
+    if not sample_active:
+        upload = st.file_uploader(
+            tr(language, "upload_label"), type="csv", key="wochen_csv",
+            help=tr(language, "upload_help"),
+        )
+        st.caption(tr(language, "upload_help"))
+
+if sample_active:
+    upload = BytesIO(UI_BEISPIEL.read_bytes())
+    upload.name = UI_BEISPIEL.name
 
 if upload is None:
     st.info(tr(language, "no_upload"))
@@ -474,6 +491,8 @@ elif view == "course":
     next_metric.metric(tr(language, "priority_next"), count_extended - count_short)
     rest_metric.metric(tr(language, "priority_rest"), len(course) - count_extended)
     st.info(tr(language, "priority_explain"))
+    with st.expander(tr(language, "risk_when_title")):
+        st.markdown(tr(language, "risk_when_explain", day=day))
     with st.expander(tr(language, "scope_evidence_title")):
         st.write(tr(language, "scope_evidence"))
 
@@ -597,6 +616,14 @@ elif view == "course":
     )
     entry = review.loc[selected]
     st.markdown(tr(language, "detail_title", id=entry["id_student"], day=day))
+    st.caption(tr(
+        language, "person_priority_current", day=day, rank=entry["rang"],
+        total=len(review), group=local_group(language, entry["hinweisstufe"]),
+    ))
+    if pd.notna(entry["ersthinweis_tag"]) and entry["ersthinweis_tag"] <= day:
+        st.caption(tr(language, "person_priority_first", first=int(entry["ersthinweis_tag"])))
+    else:
+        st.caption(tr(language, "person_priority_none", day=day))
     observations = []
     questions = []
     due = int(entry["assessments_fehlend"])
