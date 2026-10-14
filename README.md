@@ -1,155 +1,149 @@
-# LearnerCue: Frühwarnhinweise für Lernende mit OULAD
+# LearnerCue: Early support signals from OULAD
 
-LearnerCue (zuvor LernRadar) ist ein Streamlit-Prototyp für die wöchentliche Sichtung von Kursen. Er ordnet **alle noch angemeldeten Kurseinträge** innerhalb jedes Kursdurchlaufs nach einem Modellwert. Farbige, auch textlich benannte Rangbereiche helfen bei der Sichtung (oberste rund 10 %, nächste rund 10 %, übrige Personen); sie sind keine geprüften persönlichen Risikogrenzen. Ein Eintrag ist ein Anlass für eine fachliche Sichtung und gegebenenfalls ein Unterstützungsangebot, keine automatische Entscheidung über Lernende.
+[Try the live Streamlit demo](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/) · [Deutsche Dokumentation](README.de.md)
 
-**[Live-Demo ausprobieren](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/)** · Öffne dort „Synthetische Demo starten“. Die öffentliche Testdatei zeigt die Bedienung und enthält keine echten Lernenden; die historischen Modellkennzahlen stehen in dieser README.
+LearnerCue (formerly LernRadar) is a Streamlit prototype for weekly course review. It ranks **all learners still enrolled** in each course presentation by a model score. The top approximately 10%, the next approximately 10%, and everyone else are labelled review groups, **not validated individual risk thresholds**. A signal invites a coach to review the situation and consider support; it is not an automated decision about a learner.
 
-## Fragestellung
+In the public app, select **“Start synthetic demo”** (or **“Synthetische Demo starten”**). Its fabricated records demonstrate the interface. The historical model results below come from a separate OULAD analysis.
 
-Welche zu einem Kurstag noch angemeldeten Lernenden sollten bei begrenzter Betreuungskapazität zuerst geprüft werden, wenn das gemeinsame Ziel ein **späterer Kursabbruch oder das spätere Kursergebnis `Fail`** ist?
+## The question
 
-Der Prototyp betrachtet 16 wöchentliche Stichtage: Tag 6, 13, …, 111. Die Modelle unterscheiden für eine einzelne Person **nicht**, ob eher ein Abbruch oder ein Nichtbestehen bevorsteht. Ein Kurseintrag ist die Anmeldung einer Person zu einem bestimmten Kursdurchlauf; dieselbe Person kann mehrere Kurseinträge haben.
+Which learners still enrolled on a given course day should coaches review first when support capacity is limited and the outcome of interest is **subsequent withdrawal or a final result of `Fail`**?
 
-## Datengrundlage
+The prototype uses 16 weekly checkpoints, days 6, 13, …, 111. Its models do **not** distinguish whether an individual may withdraw or fail. One course entry means one person's enrolment in a particular course presentation; a person may have multiple entries.
 
-Das anonymisierte [Open University Learning Analytics Dataset (OULAD)](https://research.stem.open.ac.uk/ouanalyse/dataset/) umfasst sieben Module mit 22 Durchläufen aus 2013 und 2014. Verwendet werden insbesondere `studentInfo.csv`, `studentRegistration.csv`, `assessments.csv`, `studentAssessment.csv` und `studentVle.csv`. VLE steht für *Virtual Learning Environment*, die virtuelle Lernumgebung. Die historischen Kursdurchläufe dauern 234 bis 269 Tage; Tag 27 liegt entsprechend noch am Anfang eines Kurses.
+## Data and features
 
-Die [Originalveröffentlichung](https://pmc.ncbi.nlm.nih.gov/articles/PMC5704676/) ordnet AAA, BBB und GGG den **Sozialwissenschaften** sowie CCC, DDD, EEE und FFF dem Bereich **STEM** zu. Die Modulnamen wurden zur Anonymisierung durch Codes ersetzt; konkrete Kurstitel, Lehrpläne oder Lerninhalte lassen sich aus OULAD nicht zuverlässig ablesen. `vle.csv` enthält Materialtypen und geplante Wochen, nicht die Texte der Lernmaterialien. Die sieben Originaltabellen, die Fachbereiche je Modul und die Dauer der 2014J-Durchläufe sind in der App unter **📚 Über das Projekt** erklärt. Die Module wurden unter Auswahlkriterien wie verfügbaren VLE-Daten, mehreren Durchläufen, größeren Gruppen und einem nennenswerten Anteil nicht bestandener Fälle ausgewählt. Daher ist OULAD keine Zufallsstichprobe aller Weiterbildungen.
+The anonymised [Open University Learning Analytics Dataset (OULAD)](https://research.stem.open.ac.uk/ouanalyse/dataset/) covers seven modules and 22 presentations in 2013–14. The project mainly uses `studentInfo.csv`, `studentRegistration.csv`, `assessments.csv`, `studentAssessment.csv`, and `studentVle.csv`. VLE means virtual learning environment. Historical presentations run for 234–269 days, so day 27 is early in a course.
 
-Für jeden Stichtag enthält die aufbereitete Wochenbasis nur Kurseinträge, die zu diesem Zeitpunkt noch angemeldet sind. Als späterer Fall zählt ein bestätigter Abbruch nach dem Stichtag oder das Kursergebnis `Fail`. Fälle ohne lesbaren Abmeldetag lassen sich für diese zeitliche Abgrenzung nicht zuverlässig zuordnen. Die Wochenbasis unter `data/processed/oulad_wochenmodellbasis_tag6_bis111.csv` umfasst 423.510 Datenstände mit 13 Spalten. Mehrere Datenstände können zum selben Kurseintrag gehören.
+The [original publication](https://pmc.ncbi.nlm.nih.gov/articles/PMC5704676/) groups AAA, BBB, and GGG under social sciences and CCC, DDD, EEE, and FFF under STEM. Module names are anonymised; actual course titles, syllabi, and learning content cannot reliably be inferred. The `vle.csv` file describes material types and planned weeks, not lesson texts. The app's **About the project** area explains the seven source tables, subject groups, and 2014J course durations. OULAD's module selection included criteria such as available VLE data, repeat presentations, larger cohorts, and a meaningful proportion of unsuccessful outcomes; it is not a random sample of all continuing education.
 
-Die exportierten Modelle nutzen folgende Eingaben bis zum jeweiligen Stichtag:
+At each checkpoint, the prepared dataset contains only course entries still enrolled then. A later case is a recorded withdrawal after that checkpoint or a final `Fail`. Withdrawal without a readable date cannot be assigned reliably to this time-specific outcome. The processed weekly basis at `data/processed/oulad_wochenmodellbasis_tag6_bis111.csv` contains **423,510 snapshots and 13 columns**. An entry may appear in several weekly snapshots.
 
-| Eingabe | Bedeutung |
+| Model input | Meaning |
 | --- | --- |
-| `code_module`, `code_presentation` | Modul und Kursdurchlauf |
-| `anmeldetag` | Tag der Anmeldung relativ zum Kursbeginn |
-| `assessments_faellig` | Zahl bis dahin fälliger Assessments |
-| `abgaben` | Zahl erfasster eigener Abgaben |
-| `banked_faellige` | Zahl fälliger, angerechneter Leistungen |
-| `assessments_fehlend` | Zahl fälliger Leistungen ohne erfasste Erfüllung |
-| `klicks_bis_stichtag` | Erfasste VLE-Klicks seit Kursbeginn |
-| `klicks_letzte_7_tage` | Erfasste VLE-Klicks in der letzten Kurswoche |
+| `code_module`, `code_presentation` | Module and presentation |
+| `anmeldetag` | Enrolment day relative to course start |
+| `assessments_faellig` | Number of assessments due so far |
+| `abgaben` | Number of recorded submissions |
+| `banked_faellige` | Number of due assessments covered by credit transfer |
+| `assessments_fehlend` | Number of due assessments without recorded completion |
+| `klicks_bis_stichtag` | Recorded VLE clicks up to the checkpoint |
+| `klicks_letzte_7_tage` | Recorded VLE clicks in the preceding seven days |
 
-`id_student` dient nur zur Zuordnung und Trennung von Personen, `stichtag` zur Auswahl des Wochenmodells. Beide sind keine Modellmerkmale. Assessment-Punktzahlen werden nicht verwendet, weil für die Bekanntgabe der Bewertung kein verlässlicher Zeitpunkt vorliegt.
+`id_student` identifies and separates people, and `stichtag` selects the weekly model; neither is a model feature. Grades are excluded because a reliable timestamp for when a grade became known is unavailable.
 
-## Vorgehen und Bewertung
+## Development and evaluation
 
-1. Rohdateien, Schlüssel, fehlende Werte und Abmeldezeitpunkte geprüft.
-2. Zunächst einen Hinweis für spätere Abmeldungen ab Tag 14 untersucht.
-3. Auf Tag 28 und das gemeinsame Ziel „Abbruch oder Fail“ erweitert; einfache Regeln, logistische Regression, Random Forest und Histogram Gradient Boosting verglichen.
-4. Die Tag-28-Auswertung zeitlich mit 2014J geprüft. Anschließend Wochenstände bis Tag 111, getrennte Modelle je Woche und eine wiederholte kursweise Hinweisauswahl untersucht.
-5. Den Bildungsabschluss zusätzlich geprüft und wegen der starken Verschiebung von Hinweisen zwischen Bildungsgruppen **nicht** in die exportierten Modelle übernommen.
-6. Altersgruppe, frühere Modulversuche, belegte Credits und eine deklarierte Einschränkung deskriptiv gesichtet; frühere Versuche zusätzlich auf mehreren Stichtagen im Modell verglichen.
-7. Die Modelle und eine CSV ohne spätere Ergebnisse für die Vorführung exportiert; eine lokale Streamlit-Oberfläche erstellt.
+1. Inspected raw tables, keys, missing values, and withdrawal dates.
+2. First investigated later withdrawals using a day-14 checkpoint.
+3. Expanded to day 28 and the combined withdrawal-or-`Fail` outcome; compared simple rules, logistic regression, random forest, and histogram gradient boosting.
+4. Evaluated the day-28 approach temporally on 2014J, then explored weekly snapshots through day 111, one model per week, and repeated course-level review selections.
+5. Examined education level but excluded it from the exported models because it shifted alerts substantially between education groups.
+6. Descriptively reviewed age group, previous module attempts, registered credits, and declared disability; also compared previous attempts as a feature at several checkpoints.
+7. Exported the models and a demo CSV without later outcomes, then built the local Streamlit interface.
 
-Die früheren Vergleiche innerhalb der Entwicklungsdaten trennten Trainings- und Validierungsgruppen nach `id_student`. Die exportierten 16 Pipelines verwenden `HistGradientBoostingClassifier` und jeweils nur Trainingsdaten desselben Stichtags aus Präsentationen vor 2014J. Für die Demo und zeitliche Auswertung wurden aus 2014J die 1.403 Personen ausgeschlossen, die auch in früheren Präsentationen vorkommen. Das Training umfasst 282.519 wöchentliche Datenstände; die Demo 121.447 Datenstände von 8.682 unterschiedlichen Kurseinträgen. Die Demo enthält weder `final_result` noch die Zielvariable.
+Earlier development comparisons separated training and validation groups by `id_student`. The 16 exported pipelines use `HistGradientBoostingClassifier`, each trained on its checkpoint in presentations before 2014J. For the 2014J demo and temporal assessment, **1,403 people** also present in earlier presentations were excluded. Training comprises **282,519 weekly snapshots**; the demo comprises **121,447 snapshots from 8,682 distinct course entries**. The demo file has neither `final_result` nor the target variable.
 
-**Average Precision (AP)** bewertet die Reihenfolge aller Kurseinträge anhand des späteren Ergebnisses. **Trefferquote** bezeichnet den Anteil späterer Fälle unter den Hinweisen; **Recall** den Anteil aller späteren Fälle, die einen Hinweis erhalten. Die tatsächliche Fallquote gehört als Vergleichswert immer dazu. Bei der kursweisen Auswahl werden die obersten 10 beziehungsweise 20 % **pro Kursdurchlauf und Stichtag** markiert, bei kleinen Kursen aufgerundet.
+**Average precision (AP)** measures how well the ranking orders all entries against their later outcomes. **Precision** is the share of signalled entries that become cases; **recall** is the share of all later cases that receive a signal. The outcome prevalence is an essential reference. The top 10% or 20% is selected **within each presentation at each checkpoint**, rounding up in small courses.
 
-### Explorative zeitliche Ergebnisse
+### Exploratory temporal results
 
-Auf 2014J erreicht das Wochenmodell an Tag 27 bei 7.828 noch angemeldeten Kurseinträgen eine AP von **0,625** gegenüber **0,429** für eine Referenz aus Kurs- und Anmeldedaten; der spätere Fallanteil beträgt **37,6 %**. Bei 20 % Hinweisen je Kurs sind es 1.567 Hinweise mit 1.006 Treffern: **64,2 % Trefferquote** und **34,1 % Recall** an diesem Stichtag.
+At day 27 in 2014J, the weekly model scores **AP 0.625**, compared with **0.429** for a reference using course and enrolment data, among **7,828** still-enrolled entries. Later outcome prevalence is **37.6%**. Selecting approximately 20% per course yields **1,567 signals**, including **1,006 later cases**: **64.2% precision** and **34.1% recall** at that checkpoint.
 
-Bei einer Simulation von 16 wöchentlichen Sichtungen in 2014J erhalten mit der 20-%-Auswahl insgesamt **4.768 von 8.682 Kurseinträgen** mindestens einmal einen Hinweis (54,9 %). Von 3.800 späteren Abbrüchen oder Nichtbestehen werden **2.761** mindestens einmal erkannt (72,7 % kumulativer Recall). Die Trefferquote der erstmaligen Hinweise beträgt 57,9 %. Die wiederholten Wochenhinweise dürfen dabei nicht als unterschiedliche Personen gezählt werden. Ein Wochenbudget von 20 % bedeutet über 16 Wochen also keine Gesamtquote von 20 %.
+Across a simulation of 16 weekly reviews in 2014J, **4,768 of 8,682 entries** (54.9%) receive at least one signal with the 20% weekly selection. It identifies **2,761 of 3,800 later cases** at least once (**72.7% cumulative recall**). Precision at the first signal is 57.9%. Repeated weekly signals must not be counted as distinct people: a weekly capacity of 20% does not mean that only 20% are ever selected.
 
-Diese Zahlen stammen aus einer **explorativen** zeitlichen Prüfung: 2014J wurde während der Projektentwicklung mehrfach eingesehen und beeinflusste Entscheidungen. Die Werte sind daher kein Ergebnis eines unberührten Abschlusstests und kein Nachweis der Wirkung einer Intervention. Die verglichenen Stichtage enthalten unterschiedliche noch angemeldete Gruppen; ein höherer Wert in einer späteren Woche beweist nicht, dass diese Woche der beste Zeitpunkt für Unterstützung ist.
+These are **exploratory** temporal results. The 2014J group was inspected repeatedly during development and influenced decisions, so it is not an untouched final test. The figures do not establish that outreach changes outcomes. Different checkpoints contain different still-enrolled populations; a higher metric in a later week alone does not establish the best time to intervene.
 
-In `12_zusatzmerkmale.ipynb` verbesserten frühere Modulversuche die AP innerhalb der Entwicklungsdaten an Tag 27 im Mittel von 0,717 auf 0,720 und den Recall bei 20 % Hinweisen von 33,3 % auf 33,7 %. Der Gewinn ist klein; die exportierten Modelle und die App verwenden dieses Zusatzmerkmal derzeit nicht. Zusammenhänge mit Alter oder einer deklarierten Einschränkung sind keine individuellen Ursachen und wurden nicht in die Modelle übernommen.
+In `12_zusatzmerkmale.ipynb`, adding previous module attempts raised mean development AP at day 27 from 0.717 to 0.720 and recall at 20% from 33.3% to 33.7%. That gain was small, and the exported models do not use the feature. Associations with age or declared disability do not establish individual causes, and those attributes were not added.
 
-### Frühere Tag-28-Analyse
+### Earlier day-28 analysis
 
-Die erste Tag-28-Modellbasis umfasst 27.422 Kurseinträge, darunter 12.044 spätere Abbrüche oder `Fail` (43,9 %). Im damaligen zurückgelegten Prüfteil erreichte Histogram Gradient Boosting eine AP von 0,709 gegenüber 0,514 für die Referenz aus Kurs- und Anmeldedaten. Diese Auswertung verwendete einen anderen Stichtag und eine andere Aufteilung als die wöchentlichen Analysen; die Werte sollten nicht direkt miteinander verglichen werden. Der Tag-28-Prototyp wurde durch die Wochenversion abgelöst.
+The initial day-28 dataset contains **27,422 entries**, including **12,044** later withdrawals or `Fail` results (43.9%). On its then-held-out evaluation split, histogram gradient boosting achieved AP **0.709**, versus **0.514** for a course-and-enrolment reference. Its checkpoint and split differ from those of the weekly analysis, so the figures are not directly comparable. The weekly version supersedes that prototype.
 
-## Lokale Anwendung
+## Run the app locally
 
-Nach dem Klonen im Projektordner die Abhängigkeiten mit der versionierten `uv.lock` abgleichen und mit [uv](https://docs.astral.sh/uv/) starten:
+After cloning, install from the committed lockfile using [uv](https://docs.astral.sh/uv/):
 
-```powershell
+```sh
 uv sync --locked
 uv run streamlit run app.py
 ```
 
-Die App benötigt neben dem Code `models/oulad_wochen/schema.json` und die 16 gespeicherten Modelle `tag_006.joblib` bis `tag_111.joblib`. Diese Modelldateien und `uv.lock` wurden für das Repository versioniert; prüfe nach einem frischen Klon, ob sie tatsächlich vorhanden sind. Nach dem Start stehen die synthetische Demo und der Upload zur Wahl.
+The app requires `models/oulad_wochen/schema.json` and the 16 saved models `tag_006.joblib` through `tag_111.joblib`. They and `uv.lock` are committed. After launch, use the synthetic demo or upload a prepared CSV.
 
-Für einen **frischen Klon** lässt sich die mitgelieferte `examples/learnercue_ui_sample.csv` mit „Synthetische Demo starten“ direkt öffnen oder herunterladen und hochladen. Sie enthält 120 **synthetische** Wochenstände zu BBB und CCC an Tag 6, 13 und 20. Kennungen, Beobachtungen und die mit den echten Modellen berechnete Rangfolge dienen ausschließlich dazu, die Bedienung zu prüfen. Aus dieser Datei darf keine Trefferquote, Modellgüte oder Aussage über reale Lernende abgeleitet werden.
+`examples/learnercue_ui_sample.csv` contains **120 synthetic snapshots** for BBB and CCC at days 6, 13, and 20. Open it with the demo button or download and upload it after a fresh clone. The identifiers and observations are fabricated, and its rankings are computed with the saved models solely to test the interface. **Do not calculate model performance or draw conclusions about real learners from this file.**
 
-Für die **fachliche Projektvorführung** die lokale `data/demo/oulad_wochen_2014j.csv` verwenden. Sie wird durch `11_wochenmodelle_export.ipynb` aus der vorbereiteten Wochenbasis erzeugt und liegt wegen des ignorierten Ordners `data/` nicht im Git-Repository. Wenn sie im Projektordner vorhanden ist, erscheint ihr Download statt der kleinen Testdatei. Ohne sie lässt sich eine entsprechend vorbereitete eigene CSV hochladen; OULAD-Rohdateien sind **kein** direktes Upload-Format.
+For a research presentation using historical OULAD data, use the locally generated `data/demo/oulad_wochen_2014j.csv`. Notebook `11_wochenmodelle_export.ipynb` exports it from the prepared weekly dataset. The `data/` directory is Git-ignored, so this file is not part of the repository or public deployment. When present locally, its download replaces the smaller synthetic sample. You can also upload another prepared CSV; raw OULAD tables are **not** directly accepted.
 
-Die CSV braucht genau diese **Pflichtspalten** (weitere Spalten werden ignoriert):
+Required CSV columns (additional columns are ignored):
 
 ```text
 code_module,code_presentation,id_student,stichtag,anmeldetag,assessments_faellig,abgaben,banked_faellige,assessments_fehlend,klicks_bis_stichtag,klicks_letzte_7_tage
 ```
 
-Die App prüft die Eingaben und lädt für jeden enthaltenen Stichtag sein Modell. Danach wählt man einen von zwei deutlich getrennten Einstiegen: **Coach** mit „Diese Woche“ und „Kurs prüfen“, oder **Leitung und Lead Coach** mit einem vorläufigen Planungsszenario. Aus der Wochenübersicht lässt sich ein Kurs **durch Klick auf seine Tabellenzeile** oder über die Kurswahl direkt öffnen. „Kurs prüfen“ zeigt standardmäßig **alle Personen des Kurses in Modellreihenfolge**; ein Zeilenklick oder die Personenauswahl darunter öffnet Beobachtungen und den ausdrücklich simulierten Bearbeitungsstand. Optional zeigt „Jetzt prüfen“ vorrangige Einträge mit Beispielstatus „noch nicht gesichtet“ sowie an diesem Kurstag fällige Beispiel-Wiedervorlagen. Wartende Antworten, Gespräche und spätere Wiedervorlagen werden nicht als fällig markiert. Eine Person weiter unten kann bei fälliger Wiedervorlage ebenfalls in dieser Ansicht stehen; der Rang in der Gesamtliste bleibt sichtbar. Die Arbeitsansicht wertet keine echten Kontakte aus und trifft keine automatische Kontaktentscheidung.
+The app validates the input and loads a model for each included checkpoint. Two separate entry points follow: **Coach**, with a weekly overview and course review; and **Management / Lead Coach**, a provisional planning scenario. In the weekly overview, click a course table row or use the course selector. Course review displays **the full roster in model order** by default; click a row or select a person to inspect observations and an explicitly simulated workflow status. The optional “Review now” view focuses on priority entries marked “not yet reviewed” and example follow-ups due that day. Replies pending, conversations, and later follow-ups are not due. A lower-ranked person with a due follow-up may also appear, with their full-roster rank visible. This view neither records real contacts nor decides automatically whom to contact.
 
-Ein dritter Einstieg **Über das Projekt** erläutert Daten, anonymisierte Module, Modellweg, historischen Vergleich, möglichen Nutzen und Grenzen. Die ausführlichen Erklärungen sind auch **vor dem Upload** über **Hilfe & Hintergrund → Über die Demo** zugänglich. Der Hilfedialog enthält daneben Ablauf und Glossar. Im Kursbereich wird ein belegter Fachbereich und für 2014J die Kursdauer genannt, kein erfundener Kurstitel. Bei wichtigen Spalten und Einstellungen erscheint zusätzlich eine Erklärung als Tooltip. Der jüngste enthaltene Kurstag ist voreingestellt. Modellwerte dienen nur zur Reihenfolge und sind keine geprüften individuellen Ausfallwahrscheinlichkeiten.
+A third **About the project** entry point explains the data, anonymised modules, model path, historical comparison, possible value, and limits. Before upload, the same background is accessible through **Help & background → About the demo**. Help also contains a walkthrough and glossary. The course page displays the supported subject area and, for 2014J, course duration, rather than inventing a course title. Tooltips explain key columns and controls. The most recent uploaded checkpoint is selected initially. Model scores determine ordering; they are **not calibrated personal probabilities of failure**.
 
-Deutsch und Englisch lassen sich oben auf der Seite wechseln. Das helle und dunkle Farbschema ist in `.streamlit/config.toml` definiert; der Wechsel erfolgt über das Streamlit-Menü oben rechts unter **Settings → Theme**. Die Gestaltung nutzt die nativen Bedienelemente, sodass Beschriftungen und Hinweise in beiden Modi lesbar bleiben. Bekannte CSV-Fehler erscheinen auch auf Englisch; für unerwartete Meldungen gibt es eine englische Zusammenfassung und bei Bedarf technische Details.
+Switch between German and English at the top. Light and dark themes are defined in `.streamlit/config.toml` and selected in Streamlit's **Settings → Theme** menu. Known CSV errors are translated; unexpected errors have an English summary and optional technical details.
 
-Unter **Kurs prüfen** erstellt **Kursbericht herunterladen** einen lokalen, druckbaren HTML-Bericht mit der vollständigen Kursreihenfolge für den gewählten Tag, **auch wenn „Jetzt prüfen“ aktiv ist**. Er enthält anonymisierte IDs, beobachtete Leistungs- und Klickzahlen sowie gegebenenfalls den im aktuellen Browser simulierten Bearbeitungsstand, aber keine Ergebnisvariable und keine gesicherte persönliche Risikowahrscheinlichkeit. Der Bericht sollte wegen der Kennungen geschützt aufbewahrt werden. Für die ausgewählte Person zeigt ein optionaler Bereich einen neutralen Nachrichtentext, den ein Coach selbst prüfen und kopieren kann. Es werden keine Nachrichten versendet. **Fehler melden** öffnet ein Formular für einen lokal gespeicherten Textbericht; es versendet weder Daten noch einen Bericht automatisch. Der optionale GitHub-Link ist nur für Berichte ohne personenbezogene Daten geeignet.
+**Download course report** creates a local printable HTML report for the full course ranking on the selected day, even while “Review now” is active. It includes anonymised IDs, observed assessment and click counts, and any simulated status in the current browser session, but no target outcome or established personal risk probability. Protect the report because it contains identifiers. An optional neutral message draft for a selected learner can be reviewed and copied by a coach; **no messages are sent**. **Report an issue** saves a text report locally and sends nothing automatically. The optional GitHub link is suitable only for reports without personal data.
 
-„Neu“ und „schon früher“ beziehen sich ausschließlich auf vorrangige Rangbereiche in den Wochen **dieser CSV**, nicht auf Kontakte. Daneben kann man für eine Person einen **Beispielstatus** wie „Nachricht vorbereitet“, „Antwort ausstehend“ oder „Wiedervorlage an Tag …“ setzen. Dieser Status gilt nur während der Browser-Sitzung und ist keine Dokumentation tatsächlich geführter Gespräche. Die Leitungsansicht berechnet Listenhistorie nur für die gewählten vorrangigen Rangbereiche. Für die Kapazitätsrechnung lassen sich die erste Gruppe, beide vorrangigen Gruppen oder **alle Kurseinträge** auswählen; Minuten und Kontaktanteile sind Annahmen. **Diese Leitungskennzahlen sind ein vorläufiges Konzept; ein belastbares Managementprodukt wäre ein separates Projekt.** Die CSV enthält keine späteren Kursergebnisse. Die getrennten Einstiege sind keine Benutzerrollen mit Zugriffsrechten. An Tag 27 umfasste die historische 20-%-Auswahl nur 34,1 % der späteren Fälle; die Coach-Liste blendet die übrigen Kurseinträge nicht mehr aus. Klicks und offene Leistungen sind beobachtete Daten, keine nachgewiesenen Gründe für einen individuellen Hinweis. Ein kurzer Test der Bedienbarkeit ist in `docs/ux_kurztest.md` vorbereitet; `docs/ux_checkliste.md` enthält nacheinander abharkbare Prüfungen.
+“New” and “seen before” describe priority rank groups within the **uploaded CSV's weeks**, not contact history. Example states such as “message prepared,” “awaiting reply,” or “follow up on day …” last only for the browser session and are not records of actual conversations. Management list history covers the selected priority groups; its capacity estimate can include the first group, both groups, or all entries. Contact shares and minutes are assumptions. **The management KPIs are a provisional concept; a dependable management product would be a separate project.** The CSV omits later outcomes. The entry points do not implement access control. At day 27, the historical 20% selection covered only 34.1% of later cases, which is why the coach roster retains everyone. Clicks and missing assessments are observations, not demonstrated causes of an individual signal.
 
-Die Coach-Ansicht beantwortet unter „Ab wann gilt eine Person als gefährdet?“ zwei verschiedene Fragen: Ein Modellhinweis ist für noch angemeldete Kurseinträge ab Tag 6 wöchentlich möglich; eine **validierte individuelle Risikoschwelle** oder ein nachgewiesener Beginn persönlicher Gefährdung existiert nicht. Die obersten rund 10 und nächsten rund 10 % sind Sichtungsgruppen je Kurs. Bei ausgewählten Personen zeigt die Detailansicht den aktuellen Rang und gegebenenfalls den ersten Tag auf der vorrangigen Liste **innerhalb der hochgeladenen Wochen**. Auch Personen außerhalb dieser Gruppen können später abbrechen oder nicht bestehen.
+The coach view also answers **“When is a learner considered at risk?”** A model signal can appear weekly from day 6 for entries still enrolled. There is **no validated individual risk threshold or proven onset of personal risk**. The first two approximately 10% groups are review priorities within each course. A selected person's details show the current rank and, when applicable, the first day in a priority group **among uploaded weeks**. People outside those groups can also later withdraw or fail.
 
-## Öffentliche Portfoliodemo
+## Public portfolio demo
 
-GitHub Pages kann die Portfolioseite mit einem Link zur App zeigen, aber keinen Python-Prozess für Streamlit ausführen. LinkedIn kann denselben externen Link im Profil hervorheben; es hostet die App nicht. Eine passende Hosting-Option ist **Streamlit Community Cloud**:
+GitHub Pages hosts a portfolio page linking to the app; it cannot run the Streamlit Python process. LinkedIn can feature the external link but does not host the app. The live app is deployed on [Streamlit Community Cloud](https://share.streamlit.io/) from the public `TonyWillert/FWS_Project` repository, `main` branch, and `app.py`. Its deployment uses Python 3.14 as specified by `pyproject.toml` and `.python-version`, the committed `uv.lock`, models, and schema.
 
-1. Unter [share.streamlit.io](https://share.streamlit.io/) mit GitHub verbinden und eine neue App aus dem öffentlichen Repository `TonyWillert/FWS_Project`, Branch `main`, Einstieg `app.py` anlegen.
-2. In den erweiterten Einstellungen **Python 3.14** wählen: `pyproject.toml` verlangt mindestens 3.14 und `.python-version` enthält 3.14. Community Cloud erkennt die vorhandene `uv.lock` für die Abhängigkeiten. Die 16 gespeicherten Modelle und das Schema müssen im Repository bleiben.
-3. Nach dem Start die synthetische Demo mit einem Klick öffnen und den Weg **Coach → Diese Woche → Kurs prüfen → Person → Kursbericht** im öffentlichen Browser prüfen. Die lokale Datei unter `data/demo/` wird nicht mit Git übertragen und ist online nicht verfügbar.
-4. Die Live-Demo läuft unter [LearnerCue auf Streamlit Community Cloud](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/). In der öffentlichen App keine echten personenbezogenen Kursdaten hochladen.
+[Open the LearnerCue demo](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/) and try **Coach → This week → Review course → Person → Course report** using the synthetic sample. Do **not** upload real personal course data to the public app. Historical metrics here derive from the separate OULAD evaluation; a local OULAD export is needed for a research walkthrough.
 
-Die öffentliche Testdatei demonstriert die Bedienung; die historischen Kennzahlen in dieser README stammen aus der getrennten OULAD-Auswertung. Der lokale OULAD-Durchlauf bleibt für eine fachliche Projektvorführung nötig.
+## Value and potential use
 
-## Nutzen und möglicher Einsatzkontext
+The demonstrated value is a better **order for human review** of the historical OULAD courses under a specified support capacity. The prototype does not show that support prevents withdrawal or failure. Before use in another institution, define its outcome, intervention timing, and coach capacity; prepare its own data; and test a model independently on later local courses. Operation would also require reliable imports, restricted access, and a human-maintained workflow history. These saved OULAD models are **not validated for assessing real learners elsewhere**.
 
-Der bisher nachgewiesene Nutzen ist eine bessere **Reihenfolge für die fachliche Sichtung** der historischen OULAD-Kurse bei einer festgelegten Betreuungskapazität. Der Prototyp beweist nicht, dass ein Unterstützungsangebot spätere Abbrüche oder ein Nichtbestehen verhindert. Für eine Weiterbildungseinrichtung müssten zuerst Ergebnisdefinition, Interventionszeitpunkt und verfügbares Betreuungsteam festgelegt, eigene Kursdaten aufbereitet und ein Modell auf späteren eigenen Durchläufen unabhängig geprüft werden. Ein laufender Betrieb bräuchte zudem verlässliche Datenimporte, begrenzte Zugriffsrechte und einen von Menschen gepflegten Bearbeitungsstand. Die gespeicherten OULAD-Modelle sind nicht für eine unmittelbare Bewertung realer Lernender einer anderen Einrichtung validiert.
+## Project map and reproduction
 
-## Projektdateien und Reproduktion
-
-| Datei | Inhalt |
+| File | Role |
 | --- | --- |
-| `01_datensichtung.ipynb` | Rohdaten und erste Modellbasen |
-| `02_modellvergleich.ipynb` bis `04_abschlussbewertung.ipynb` | Frühe Untersuchung des Abbruchs ab Tag 14 |
-| `05_tag28_modellvergleich.ipynb` | Tag-28-Modellvergleich und Bewertung |
-| `06_zeitliche_pruefung.ipynb` | Zeitliche Prüfung der Tag-28-Variante |
-| `07_getrennte_risiken.ipynb` | Explorative Unterscheidung von Abbruch und Nichtbestehen |
-| `08_zeitfenster.ipynb`, `09_wochenvergleich.ipynb` | Wochenstände, Stichtage und wiederholte Hinweise |
-| `10_bildungshintergrund.ipynb` | Zusatzmerkmal Bildungsabschluss und Gruppenvergleich |
-| `11_wochenmodelle_export.ipynb` | Training und Export der Wochenmodelle, Schema und Demo-CSV |
-| `12_zusatzmerkmale.ipynb` | Deskriptive Sichtung und Vergleich zusätzlicher Merkmale |
-| `app.py`, `ui_text.py`, `reporting.py` | Oberfläche, deutsche und englische Bedientexte, lokaler Kursbericht |
-| `coach_workflow.py` | Kleine Regel für die optionale simulierte Arbeitsansicht |
-| `project_context.py` | Zweisprachiger Daten- und Modulhintergrund samt Quellen und Grenzen für die Oberfläche |
-| `weekly_logic.py` | CSV-Prüfung, Modellbewertung und Hinweisauswahl |
-| `operations.py` | Aggregation und Kapazitätsrechnung für die Leitungsansicht |
-| `.streamlit/config.toml` | Hell- und Dunkelmodus der lokalen Oberfläche |
-| `docs/ux_kurztest.md` | Aufgaben und Beobachtungsbogen für einen ersten Verständlichkeitstest |
-| `docs/ux_checkliste.md` | Checkliste für Funktion, Verständlichkeit und Lesbarkeit |
-| `docs/operations_guide.md` | Kontaktstrategie, historische Fallzahlen und Planungsannahmen |
-| `assets/learnercue.svg` | Vektorlogo und Browser-Icon |
-| `models/oulad_wochen/` | Gespeichertes Schema und 16 Modell-Pipelines |
-| `examples/learnercue_ui_sample.csv` | Kleine synthetische CSV für einen Bedienungstest nach frischem Klon |
+| `01_datensichtung.ipynb` | Raw data inspection and first model datasets |
+| `02_modellvergleich.ipynb`–`04_abschlussbewertung.ipynb` | Early day-14 withdrawal investigation |
+| `05_tag28_modellvergleich.ipynb` | Day-28 model comparison and assessment |
+| `06_zeitliche_pruefung.ipynb` | Temporal assessment of day-28 version |
+| `07_getrennte_risiken.ipynb` | Exploratory separation of withdrawal and failure |
+| `08_zeitfenster.ipynb`, `09_wochenvergleich.ipynb` | Weekly snapshots, checkpoints, repeated signals |
+| `10_bildungshintergrund.ipynb` | Education feature and group comparison |
+| `11_wochenmodelle_export.ipynb` | Weekly training, model/schema export, demo CSV |
+| `12_zusatzmerkmale.ipynb` | Descriptive review and extra feature comparisons |
+| `app.py`, `ui_text.py`, `reporting.py` | App, bilingual UI text, local course report |
+| `coach_workflow.py` | Rule for optional simulated work queue |
+| `project_context.py` | Bilingual data and module background, sources, limits |
+| `weekly_logic.py` | CSV validation, scoring, review group selection |
+| `operations.py` | Management aggregation and capacity estimate |
+| `.streamlit/config.toml` | Light and dark themes |
+| `docs/ux_kurztest.md`, `docs/ux_checkliste.md` | First usability test and review checklist (German) |
+| `docs/operations_guide.md` | Contact strategy and planning assumptions (German) |
+| `assets/learnercue.svg` | Vector logo and browser icon |
+| `models/oulad_wochen/` | Schema and 16 saved model pipelines |
+| `examples/learnercue_ui_sample.csv` | Small synthetic CSV for a fresh clone |
 
-Die OULAD-Rohdaten und die aufbereiteten Dateien unter `data/` liegen lokal und werden nicht mit Git versioniert. Zum erneuten Erzeugen müssen die Rohdateien in der erwarteten Projektstruktur vorliegen und gegebenenfalls absolute Pfade in den frühen Notebooks an den eigenen Rechner angepasst werden. Das Exportnotebook setzt die vorbereitete Wochenbasis voraus; es erstellt sie nicht aus den Roh-CSV-Dateien. Die Ausführung der Notebooks ist daher in der beschriebenen Abhängigkeitsreihenfolge nötig. Gespeicherte `joblib`-Modelle nur aus vertrauenswürdigen Quellen laden.
+Raw OULAD data and processed `data/` files remain local. Reproduction requires the raw files in the expected project structure and may require adapting absolute paths in early notebooks. The export notebook expects the prepared weekly basis; it does not recreate that basis from raw CSVs. Run notebooks in dependency order. Load saved `joblib` models only from trusted sources.
 
-## Grenzen und nächste Schritte
+## Limits and next steps
 
-- OULAD beschreibt ausgewählte historische Fernstudienkurse; eine Übertragung auf heutige Weiterbildungen, andere Einrichtungen oder alle Lernenden ist nicht belegt.
-- Die ursprünglichen Modultitel und konkreten Lehrinhalte sind nicht verfügbar; Fachbereiche und Metadaten geben keine Auskunft über individuelle Lernschwierigkeiten in einem Fach.
-- Nur zum jeweiligen Stichtag noch angemeldete Personen können einen Hinweis bekommen. Bereits erfolgte Abbrüche können damit nicht verhindert werden.
-- Das gemeinsame Ziel verschmilzt Abbruch und Nichtbestehen. Der explorative Drei-Klassen-Versuch lieferte keine ausreichend verlässliche individuelle Risikorichtung für eine getrennte Anzeige.
-- VLE-Klicks sind weder Lernzeit noch Verständnis; Lernen außerhalb der Plattform bleibt unsichtbar. Auch ein fehlendes Assessment kann im Einzelfall Daten- oder Prozessgründe haben.
-- Der Bildungsabschluss verbesserte die mittlere Modellgüte an ausgewählten Stichtagen, verschob aber die Hinweise stark zwischen Bildungsgruppen. Auch ohne dieses Merkmal können andere Eingaben Ungleichheiten abbilden; die Gruppenprüfung ist nicht abgeschlossen.
-- Die Prüfgruppe 2014J ist durch wiederholte Einsicht während der Entwicklung explorativ. Eine unabhängige zeitliche und externe Prüfung sowie die Bewertung von Fehlhinweisen und möglicher Benachteiligung fehlen.
-- Eine hohe Trefferquote belegt weder kausale Gründe noch, dass eine Ansprache den Kursverlauf verbessert. Vor einem realen Einsatz braucht es fachlich abgestimmte Maßnahmen, Datenschutzprüfung und eine Bewertung im jeweiligen Bildungskontext.
+- OULAD describes selected historical distance-learning courses. Transfer to present-day continuing education, other providers, or all learners is unproven.
+- Original course titles and learning content are unavailable. Subject metadata cannot establish an individual's learning difficulty in a subject.
+- Signals apply only while an entry is still enrolled. A withdrawal that has already happened cannot be prevented by that signal.
+- The combined target merges withdrawal and failure. An exploratory three-class approach did not provide a sufficiently reliable individual direction of risk for a separate display.
+- VLE clicks are neither study time nor comprehension; offline learning is invisible. Missing assessments can reflect data or process issues.
+- Education level improved average metrics at selected checkpoints but shifted signals substantially between groups. Other inputs may still encode inequalities; the group review remains incomplete.
+- Repeated inspection of 2014J makes this evaluation exploratory. An independent temporal and external test, analysis of false alerts, and assessment of possible unequal impact are still needed.
+- High precision establishes neither a causal explanation nor a benefit from outreach. Real use requires carefully designed support, privacy review, and evaluation in the institution's context.
 
-Der erste Verständlichkeitstest zeigte: Schrift und Aufbau waren teils zu klein bzw. unübersichtlich, die Testperson wollte einen Kurs intuitiv aus der Tabelle öffnen und verstand „Fällige Leistungen ohne Erfüllung“ nicht. Nach dieser Überarbeitung folgt ein erneuter Test von Einstieg, vollständiger Liste, Begriffen, Beispielstatus und Leitungsansicht. Ein Test mit Coaches aus der Erwachsenenbildung wäre zusätzlich nötig, um die Passung zum Arbeitsalltag zu beurteilen. Ein gestufter Kontakt mit früher optionaler Nachricht und späterer persönlicher Sichtung ist eine **ungeprüfte Hypothese**; OULAD enthält keine geeigneten Daten, um deren Wirkung oder Zeitersparnis zu belegen. Bei Änderungen an Features, Zielvariable, Modellen oder Demo-Daten müssen `project_context.py`, diese README und die historischen Kennzahlen in der App gemeinsam geprüft und aktualisiert werden.
+An initial usability test found small type and a confusing layout in places; its participant expected to open a course by clicking its table row and did not understand the label for due assessments without recorded completion. After the interface changes, another test should cover the entry point, full roster, terminology, example states, and management view. Testing with adult-education coaches would help assess fit with their actual work. An early optional neutral message followed by later personal review is an **untested hypothesis**: OULAD cannot demonstrate its effect or time savings. When features, target, models, or demo data change, review `project_context.py`, this README, and the historical metrics in the app together.
 
-## Quelle
+## Source
 
-Kuzilek, J., Hlosta, M. & Zdrahal, Z. (2017): [Open University Learning Analytics dataset](https://doi.org/10.1038/sdata.2017.171). *Scientific Data*, 4, 170171. Der Datensatz wird unter [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) bereitgestellt.
+Kuzilek, J., Hlosta, M. & Zdrahal, Z. (2017): [Open University Learning Analytics dataset](https://doi.org/10.1038/sdata.2017.171). *Scientific Data*, 4, 170171. Dataset licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
