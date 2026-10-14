@@ -4,6 +4,10 @@ Diese Punkte nacheinander in der laufenden App prüfen. Hake sie erst ab, wenn d
 
 ## Einstieg
 
+- [ ] Ohne Upload sind Problem, Hauptergebnis und der Button **Geführtes Beispiel starten** sofort sichtbar; die längere Projekterklärung verdeckt ihn nicht.
+- [ ] Der Button lädt die synthetische Datei und öffnet direkt **Diese Woche** in der Coachansicht, ohne vorherige Bereichswahl.
+- [ ] Der geführte Pfad öffnet BBB 2014J, zeigt **Jetzt prüfen** und führt zur ausgewählten Beispielperson. Ein Neustart der Tour beginnt wieder mit offenen Beispielvorgängen.
+- [ ] Der Abschluss blendet nur die Tourhinweise aus; die Daten und die normale Navigation bleiben nutzbar.
 - [ ] Die App zeigt vor dem Upload keine Kursgrafiken oder Hinweise.
 - [ ] Logo und Titel, Sprache, Hilfe und Fehlerbericht sind sichtbar; die obere Menüleiste verdeckt nichts.
 - [ ] In einem frischen Klon lässt sich die synthetische Demo per Klick starten oder die Testdatei herunterladen und hochladen; mit lokal vorhandener OULAD-2014J-Datei erscheint deren Download.
@@ -16,7 +20,7 @@ Diese Punkte nacheinander in der laufenden App prüfen. Hake sie erst ab, wenn d
 - [ ] „Ab wann gilt eine Person als gefährdet?“ erklärt Kurstage ab Tag 6 und die fehlende validierte persönliche Risikoschwelle getrennt; in der Personendetailansicht ist ein erster Listentag auf die hochgeladenen Wochen begrenzt.
 
 - [ ] Der angezeigte Kurstag ist erkennbar; der jüngste hochgeladene Tag ist voreingestellt.
-- [ ] Die Bereichswahl führt getrennt zu Coach, Leitung und Projekthintergrund; innerhalb der Coach-Ansicht gibt es keine Leitungsregisterkarte.
+- [ ] Bei eigenem Upload öffnet zuerst die Coachansicht; die Bereichswahl führt weiter zu Leitung und Projekthintergrund. Innerhalb der Coachansicht gibt es keine Leitungsregisterkarte.
 - [ ] Die Navigation Diese Woche / Kurs prüfen sowie der Wechsel zurück zur Bereichswahl funktionieren mit Maus und Tastatur.
 - [ ] Ich kann in eigenen Worten erklären, dass „neu in vorrangiger Sichtung“ einen ersten Hinweis **in den hochgeladenen Wochen** meint, nicht einen ersten Kontakt.
 - [ ] Die optionale Wochentabelle enthält verständliche Spalten und erklärt, dass dieselbe Person in mehreren Wochen auftauchen kann.
@@ -34,6 +38,7 @@ Diese Punkte nacheinander in der laufenden App prüfen. Hake sie erst ab, wenn d
 
 ## Personen und Betreuung
 
+- [ ] Die Prüfliste ist als Hauptergebnis beschriftet; die langen Erklärungen der Ranggruppen bleiben per aufklappbarem Bereich verfügbar.
 - [ ] Alle Personen des Kurses sind in Modellreihenfolge sichtbar, mit Rangnummer, Text und Farbe für die drei relativen Sichtungsgruppen.
 - [ ] Ein Klick auf eine Personenzeile öffnet genau diese ID; die Auswahl per Dropdown funktioniert ebenfalls. Nach einem Wechsel von Kurstag, Kurs oder Filter bleibt keine veraltete Auswahl hängen.
 - [ ] „Jetzt prüfen“ enthält nur vorrangige Einträge mit Beispielstatus „noch nicht gesichtet“ und an diesem Kurstag fällige Beispiel-Wiedervorlagen, auch wenn deren Rang derzeit nachrangig ist.
@@ -42,7 +47,7 @@ Diese Punkte nacheinander in der laufenden App prüfen. Hake sie erst ab, wenn d
 - [ ] Ich kann einzelne Personen und ihre beobachteten Merkmale ansehen, ohne diese Merkmale als erwiesene Ursache zu missverstehen.
 - [ ] Der neutrale Nachrichtentext ist als Entwurf erkennbar und wird nicht automatisch versendet.
 - [ ] Der Beispielstatus und die Wiedervorlage sind als Sitzungssimulation erkennbar und erscheinen in Liste und Bericht; echte Kontakte werden nicht behauptet.
-- [ ] Der Kursbericht passt zu Kurstag, Kurs und vollständiger Rangliste, auch bei aktivem Filter „Jetzt prüfen“.
+- [ ] Der optionale Kursbericht lässt sich aufklappen und passt zu Kurstag, Kurs und vollständiger Rangliste, auch bei aktivem Filter „Jetzt prüfen“.
 - [ ] Der Kontaktvorschlag unterscheidet offene Leistungen und frühere Listenhinweise; er löst keine Nachricht aus.
 
 ## Leitung und Kapazität
