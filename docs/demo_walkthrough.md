@@ -1,5 +1,7 @@
 # LearnerCue in 60–90 Sekunden zeigen
 
+Die [fertige Kurzaufnahme (39,5 Sekunden)](../assets/learnercue_demo.mp4) zeigt den Coach-Ablauf mit englischen Einblendungen und ohne Ton. In der App ist sie unter dem Startbutton im optionalen Videobereich eingebunden. Der folgende Plan beschreibt einen ausführlicheren Rundgang für eine Live-Demo oder neue Aufnahme.
+
 Ziel: Jemand soll **den Weg vom Kurs zum Hauptergebnis** sehen. In dieser Aufnahme die mitgelieferte synthetische Datei verwenden. Ihre Kennungen und Beobachtungen sind erfunden; die daraus berechnete Liste demonstriert die Bedienung, keine historische Modellgüte.
 
 | Zeit | Auf dem Bildschirm zeigen | Kurze englische Einordnung, falls gesprochen |

@@ -1,18 +1,33 @@
 """LearnerCue: wöchentliche fachliche Sichtung historischer OULAD-Kurse."""
 
 import hashlib
-from io import BytesIO
+import importlib
 import logging
 import math
+from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
+import project_context
+import ui_text
 from coach_workflow import next_step_reason
 from operations import course_workload
+
+# Community Cloud can rerun a new app.py in a process that still has the old
+# imported copy in memory. Refresh both copy modules when this release is seen.
+if "demo_video_title" not in ui_text.TEXT["de"]:
+    importlib.reload(ui_text)
+    importlib.reload(project_context)
+
 from project_context import (
-    CONTEXT, DATASET_URL, PAPER_URL, course_profile, file_overview, module_overview,
+    CONTEXT,
+    DATASET_URL,
+    PAPER_URL,
+    course_profile,
+    file_overview,
+    module_overview,
 )
 from reporting import course_report
 from ui_text import local_group, local_status, local_upload_error, tr
@@ -31,6 +46,7 @@ MODELLORDNER = PROJEKTORDNER / "models" / "oulad_wochen"
 SCHEMADATEI = MODELLORDNER / "schema.json"
 DEMODATEI = PROJEKTORDNER / "data" / "demo" / "oulad_wochen_2014j.csv"
 UI_BEISPIEL = PROJEKTORDNER / "examples" / "learnercue_ui_sample.csv"
+DEMO_VIDEO = PROJEKTORDNER / "assets" / "learnercue_demo.mp4"
 LOGO = PROJEKTORDNER / "assets" / "learnercue.svg"
 
 st.set_page_config(
@@ -199,6 +215,14 @@ if not hat_upload:
             on_click=start_guided_demo, key="guided_demo_primary",
         )
         st.caption(tr(language, "demo_data_note"))
+
+    if DEMO_VIDEO.is_file():
+        with st.expander(tr(language, "demo_video_title")):
+            st.caption(tr(language, "demo_video_note"))
+            st.video(
+                DEMO_VIDEO, format="video/mp4",
+                alt=tr(language, "demo_video_alt"),
+            )
 
 with st.expander(
     tr(language, "change_data" if hat_upload else "data_title"),
@@ -700,9 +724,11 @@ elif view == "course":
     st.markdown(f"**{tr(language, 'next_step_title')}**")
     if due:
         st.info(tr(language, "next_step_due"))
-    if history_known and entry["hinweisstatus"] == "Wiederholt im Upload":
-        st.info(tr(language, "next_step_repeat"))
-    elif pd.notna(entry["ersthinweis_tag"]) and entry["ersthinweis_tag"] < day:
+    if (
+        history_known and entry["hinweisstatus"] == "Wiederholt im Upload"
+    ) or (
+        pd.notna(entry["ersthinweis_tag"]) and entry["ersthinweis_tag"] < day
+    ):
         st.info(tr(language, "next_step_repeat"))
     elif not due:
         st.info(tr(language, "next_step_first"))
