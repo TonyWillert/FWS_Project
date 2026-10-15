@@ -129,13 +129,17 @@ The demonstrated value is a better **order for human review** of the historical 
 | `.streamlit/config.toml` | Light and dark themes |
 | `docs/ux_kurztest.md`, `docs/ux_checkliste.md` | First usability test and review checklist (German) |
 | `docs/demo_walkthrough.md` | Short click path for a live or recorded walkthrough |
+| `docs/reproduction.md` | Raw data layout, notebook order, and expected exports |
 | `docs/operations_guide.md` | Contact strategy and planning assumptions (German) |
+| `src/portfolio_projekt/paths.py` | Shared project path for all analysis notebooks |
 | `assets/learnercue.svg` | Vector logo and browser icon |
 | `assets/learnercue_demo.mp4` | Short Coach walkthrough with English captions |
 | `models/oulad_wochen/` | Schema and 16 saved model pipelines |
 | `examples/learnercue_ui_sample.csv` | Small synthetic CSV for a fresh clone |
 
-Raw OULAD data and processed `data/` files remain local. Reproduction requires the raw files in the expected project structure and may require adapting absolute paths in early notebooks. The export notebook expects the prepared weekly basis; it does not recreate that basis from raw CSVs. Run notebooks in dependency order. Load saved `joblib` models only from trusted sources.
+Raw OULAD data and processed `data/` files remain local. Run `uv sync --locked` after cloning or updating, then select this project's `.venv` as the notebook kernel. All twelve analysis notebooks use the installed project package to locate the repository, independently of the working directory; no personal Windows path needs editing.
+
+The shortest route from raw CSVs to the current weekly models is **01 → 08 → 11**, running every cell of each notebook with a fresh kernel. Notebook 01 creates the day-28 basis needed by a consistency check in 08. Notebook 08 creates **both** `oulad_wochenmodellbasis.csv` and `oulad_wochenmodellbasis_tag6_bis111.csv`; notebook 11 requires both before training and exporting. See [the reproduction guide](docs/reproduction.md) for the input layout, full notebook map, and recorded reference counts. Load saved `joblib` models only from trusted sources.
 
 ## Limits and next steps
 

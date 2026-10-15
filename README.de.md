@@ -135,13 +135,17 @@ Der bisher nachgewiesene Nutzen ist eine bessere **Reihenfolge für die fachlich
 | `docs/ux_kurztest.md` | Aufgaben und Beobachtungsbogen für einen ersten Verständlichkeitstest |
 | `docs/ux_checkliste.md` | Checkliste für Funktion, Verständlichkeit und Lesbarkeit |
 | `docs/demo_walkthrough.md` | Kurzer Klickpfad und Ablauf für eine Bildschirmvorführung |
+| `docs/reproduction.md` | Rohdatenstruktur, Notebook-Reihenfolge und erwartete Exporte (Englisch) |
 | `docs/operations_guide.md` | Kontaktstrategie, historische Fallzahlen und Planungsannahmen |
+| `src/portfolio_projekt/paths.py` | Gemeinsamer Projektpfad für alle Analyse-Notebooks |
 | `assets/learnercue.svg` | Vektorlogo und Browser-Icon |
 | `assets/learnercue_demo.mp4` | Kurzer Coach-Ablauf mit englischen Einblendungen |
 | `models/oulad_wochen/` | Gespeichertes Schema und 16 Modell-Pipelines |
 | `examples/learnercue_ui_sample.csv` | Kleine synthetische CSV für einen Bedienungstest nach frischem Klon |
 
-Die OULAD-Rohdaten und die aufbereiteten Dateien unter `data/` liegen lokal und werden nicht mit Git versioniert. Zum erneuten Erzeugen müssen die Rohdateien in der erwarteten Projektstruktur vorliegen und gegebenenfalls absolute Pfade in den frühen Notebooks an den eigenen Rechner angepasst werden. Das Exportnotebook setzt die vorbereitete Wochenbasis voraus; es erstellt sie nicht aus den Roh-CSV-Dateien. Die Ausführung der Notebooks ist daher in der beschriebenen Abhängigkeitsreihenfolge nötig. Gespeicherte `joblib`-Modelle nur aus vertrauenswürdigen Quellen laden.
+Die OULAD-Rohdaten und die aufbereiteten Dateien unter `data/` liegen lokal und werden nicht mit Git versioniert. Nach dem Klonen oder Aktualisieren `uv sync --locked` ausführen und im Notebook die `.venv` dieses Projekts als Kernel wählen. Alle zwölf Analyse-Notebooks bestimmen den Projektordner über das installierte Projektpaket, unabhängig vom Arbeitsverzeichnis; persönliche Windows-Pfade müssen nicht mehr angepasst werden.
+
+Der kürzeste Weg von den Rohdateien zu den aktuellen Wochenmodellen lautet **01 → 08 → 11**. Jedes Notebook mit einem frischen Kernel vollständig ausführen. Notebook 01 erzeugt die Tag-28-Basis für einen Kontrollvergleich in 08. Notebook 08 erzeugt **beide** Dateien `oulad_wochenmodellbasis.csv` und `oulad_wochenmodellbasis_tag6_bis111.csv`; Notebook 11 benötigt beide für Training und Export. Die [Reproduktionsanleitung](docs/reproduction.md) beschreibt die Rohdatenstruktur, die vollständigen Abhängigkeiten und die dokumentierten Vergleichszahlen. Gespeicherte `joblib`-Modelle nur aus vertrauenswürdigen Quellen laden.
 
 ## Grenzen und nächste Schritte
 
