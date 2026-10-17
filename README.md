@@ -1,5 +1,7 @@
 # LearnerCue: Early support signals from OULAD
 
+**Status: Completed portfolio project · Interactive Streamlit prototype.** [Portfolio case study](https://tonywillert.github.io/Portfolio/#learnercue)
+
 [Try the live Streamlit demo](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/) · [Watch the 40-second demo](assets/learnercue_demo.mp4) · [Deutsche Dokumentation](README.de.md)
 
 LearnerCue (formerly LernRadar) is a Streamlit prototype for weekly course review. It ranks **all learners still enrolled** in each course presentation by a model score. The top approximately 10%, the next approximately 10%, and everyone else are labelled review groups, **not validated individual risk thresholds**. A signal invites a coach to review the situation and consider support; it is not an automated decision about a learner.

@@ -1,5 +1,7 @@
 # LearnerCue: Frühwarnhinweise für Lernende mit OULAD
 
+**Projektstatus: Abgeschlossenes Portfolio-Projekt · Interaktiver Streamlit-Prototyp.** [Portfolio-Fallstudie (Englisch)](https://tonywillert.github.io/Portfolio/#learnercue)
+
 LearnerCue (zuvor LernRadar) ist ein Streamlit-Prototyp für die wöchentliche Sichtung von Kursen. Er ordnet **alle noch angemeldeten Kurseinträge** innerhalb jedes Kursdurchlaufs nach einem Modellwert. Farbige, auch textlich benannte Rangbereiche helfen bei der Sichtung (oberste rund 10 %, nächste rund 10 %, übrige Personen); sie sind keine geprüften persönlichen Risikogrenzen. Ein Eintrag ist ein Anlass für eine fachliche Sichtung und gegebenenfalls ein Unterstützungsangebot, keine automatische Entscheidung über Lernende.
 
 **[Live-Demo ausprobieren](https://fwsproject-cjpggxprduvuak9kugbusk.streamlit.app/)** · [Demo-Video ansehen (40 Sekunden)](assets/learnercue_demo.mp4). In der App **Geführtes Beispiel starten** wählen. Die öffentliche Testdatei enthält keine echten Lernenden; die historischen Modellkennzahlen stehen in dieser README.
